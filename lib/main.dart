@@ -2,7 +2,9 @@
 import 'package:flutter/material.dart';
 import 'loginpage.dart';
 import 'splashpage.dart';
-void main() {
+import 'monprofile.dart';
+void
+ main() {
   runApp(const MyApp());
 }
 
@@ -21,6 +23,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/': (context) => const SplashScreen(),
         '/login': (context) => const LoginPage(),
+        '/profile': (context) => const ProfilePage(),
       },
       debugShowCheckedModeBanner: false,
     );
