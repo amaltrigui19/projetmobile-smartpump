@@ -14,13 +14,9 @@ class AddSystemPage extends StatefulWidget {
 class _AddSystemPageState extends State<AddSystemPage> {
   final _formKey = GlobalKey<FormState>();
   String? selectedModelType;
-
-  final TextEditingController _modelNumberController =
-      TextEditingController();
-  final TextEditingController _surfaceController =
-      TextEditingController();
-  final TextEditingController _locationController =
-      TextEditingController();
+  final TextEditingController _modelNumberController = TextEditingController();
+  final TextEditingController _surfaceController = TextEditingController();
+  final TextEditingController _locationController = TextEditingController();
 
   final List<String> modelTypes = [
     'Système solaire',
@@ -39,7 +35,14 @@ class _AddSystemPageState extends State<AddSystemPage> {
 
   void _saveSystem() {
     if (_formKey.currentState!.validate()) {
-      Navigator.pop(context);
+      final newSystem = {
+        'type': selectedModelType,
+        'modelNumber': _modelNumberController.text,
+        'surface': _surfaceController.text,
+        'location': _locationController.text,
+      };
+
+      Navigator.pop(context, newSystem);
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -65,21 +68,28 @@ class _AddSystemPageState extends State<AddSystemPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: bgColor,
-
-      /// ===== APPBAR SOBRE =====
       appBar: AppBar(
-        backgroundColor: bgColor,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new,
-            color: customGreen,
-            size: 20,
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: const Icon(Icons.arrow_back, color: customGreen, size: 20),
           ),
           onPressed: () => Navigator.pop(context),
         ),
       ),
-
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -88,59 +98,89 @@ class _AddSystemPageState extends State<AddSystemPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-
-                /// ===== CARTE TITRE (AMÉLIORATION DU HAUT) =====
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
-                        blurRadius: 15,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
+                /// ===== TITRE =====
+                const Text(
+                  "Ajouter un nouveau",
+                  style: TextStyle(
+                    color: Color(0xFF2D3E28),
+                    fontSize: 28,
+                    fontWeight: FontWeight.w300,
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Ajouter un nouveau",
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        "Système",
-                        style: TextStyle(
-                          color: customGreen,
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        "Remplissez les informations ci-dessous",
-                        style: TextStyle(
-                          color: Colors.grey.shade500,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
+                ),
+                const Text(
+                  "Système",
+                  style: TextStyle(
+                    color: customGreen,
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "Remplissez les informations ci-dessous",
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 15,
                   ),
                 ),
 
-                const SizedBox(height: 32),
+                const SizedBox(height: 40),
 
-                /// ===== TYPE DU SYSTÈME =====
+                /// ===== TYPE DU MODÈLE =====
                 _buildLabel("Type du système"),
                 const SizedBox(height: 8),
-                _buildDropdown(),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.grey.shade200),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.03),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: DropdownButtonFormField<String>(
+                    value: selectedModelType,
+                    decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 18,
+                      ),
+                      hintText: "Sélectionnez un type",
+                      hintStyle: TextStyle(color: Color(0xFFB0BDB0)),
+                    ),
+                    dropdownColor: Colors.white,
+                    icon: const Icon(Icons.keyboard_arrow_down, color: customGreen),
+                    items: modelTypes.map((String type) {
+                      return DropdownMenuItem<String>(
+                        value: type,
+                        child: Text(
+                          type,
+                          style: const TextStyle(
+                            color: customGreen,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        selectedModelType = newValue;
+                      });
+                    },
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Veuillez sélectionner un type';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
 
                 const SizedBox(height: 24),
 
@@ -178,7 +218,7 @@ class _AddSystemPageState extends State<AddSystemPage> {
 
                 const SizedBox(height: 40),
 
-                /// ===== BOUTON =====
+                /// ===== BOUTON ENREGISTRER =====
                 SizedBox(
                   width: double.infinity,
                   height: 56,
@@ -190,6 +230,7 @@ class _AddSystemPageState extends State<AddSystemPage> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                       elevation: 0,
+                      shadowColor: customGreen.withOpacity(0.3),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -202,6 +243,7 @@ class _AddSystemPageState extends State<AddSystemPage> {
                             fontSize: 17,
                             fontWeight: FontWeight.w600,
                             color: Colors.white,
+                            letterSpacing: 0.5,
                           ),
                         ),
                       ],
@@ -210,6 +252,51 @@ class _AddSystemPageState extends State<AddSystemPage> {
                 ),
 
                 const SizedBox(height: 20),
+
+                /// ===== ILLUSTRATION =====
+                Center(
+                  child: Container(
+                    height: 160,
+                    width: double.infinity,
+                    margin: const EdgeInsets.symmetric(horizontal: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.04),
+                          blurRadius: 15,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: Image.asset(
+                        'assets/images/image 19.png',
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Padding(
+                            padding: const EdgeInsets.all(30),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                _buildPlantIcon(Icons.eco, Colors.green.shade400, 40),
+                                const SizedBox(width: 15),
+                                _buildPlantIcon(Icons.local_florist, Colors.green.shade500, 36),
+                                const SizedBox(width: 15),
+                                _buildPlantIcon(Icons.grass, Colors.green.shade300, 38),
+                                const SizedBox(width: 15),
+                                _buildPlantIcon(Icons.spa, Colors.green.shade600, 34),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
               ],
             ),
           ),
@@ -217,8 +304,6 @@ class _AddSystemPageState extends State<AddSystemPage> {
       ),
     );
   }
-
-  /// ================= WIDGETS =================
 
   Widget _buildLabel(String text) {
     return Text(
@@ -231,52 +316,11 @@ class _AddSystemPageState extends State<AddSystemPage> {
     );
   }
 
-  Widget _buildDropdown() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: DropdownButtonFormField<String>(
-        value: selectedModelType,
-        decoration: const InputDecoration(
-          border: InputBorder.none,
-          contentPadding:
-              EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-          hintText: "Sélectionnez un type",
-        ),
-        items: modelTypes
-            .map(
-              (type) => DropdownMenuItem(
-                value: type,
-                child: Text(
-                  type,
-                  style: const TextStyle(color: customGreen),
-                ),
-              ),
-            )
-            .toList(),
-        onChanged: (value) =>
-            setState(() => selectedModelType = value),
-        validator: (value) =>
-            value == null ? "Veuillez sélectionner un type" : null,
-      ),
-    );
-  }
-
   Widget _buildTextField({
     required TextEditingController controller,
     required String hint,
-    required IconData icon,
     TextInputType keyboardType = TextInputType.text,
+    required IconData icon,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -294,16 +338,47 @@ class _AddSystemPageState extends State<AddSystemPage> {
       child: TextFormField(
         controller: controller,
         keyboardType: keyboardType,
+        style: const TextStyle(
+          color: customGreen,
+          fontSize: 15,
+          fontWeight: FontWeight.w500,
+        ),
         decoration: InputDecoration(
           hintText: hint,
-          prefixIcon: Icon(icon, color: customGreen.withOpacity(0.6)),
+          hintStyle: TextStyle(
+            color: Colors.grey.shade400,
+            fontSize: 15,
+            fontWeight: FontWeight.w400,
+          ),
+          prefixIcon: Icon(
+            icon,
+            color: customGreen.withOpacity(0.6),
+            size: 22,
+          ),
           border: InputBorder.none,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 18,
+          ),
         ),
-        validator: (value) =>
-            value == null || value.isEmpty ? 'Ce champ est requis' : null,
+        validator: (value) {
+          if (value == null || value.isEmpty) {
+            return 'Ce champ est requis';
+          }
+          return null;
+        },
       ),
+    );
+  }
+
+  Widget _buildPlantIcon(IconData icon, Color color, double size) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(icon, color: color, size: size),
     );
   }
 }
