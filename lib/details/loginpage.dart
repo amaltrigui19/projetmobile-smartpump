@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'details/passwordoublie.dart';
-import 'details/inscription.dart';
-import 'nav.dart';
+import 'passwordoublie.dart';
+import 'inscription.dart';
+import '../nav.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
