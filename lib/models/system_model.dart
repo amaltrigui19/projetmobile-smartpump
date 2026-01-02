@@ -1,17 +1,27 @@
 class System {
   final String id;
   final String name;
-  final String currentPower; // "2.5"
-  final String dailyEnergy;  // "12.8"
-  final String efficiency;   // "95"
-  final String totalFlow;    // "450"
+  final String modelNumber;
+  final String surface;
+  final String locationName;
+  final String currentPower;
+  final String dailyEnergy;
+  final String efficiency;
+  final String totalFlow;
+  final double latitude;  // Vérifiez que c'est bien présent
+  final double longitude; // Vérifiez que c'est bien présent
 
   System({
     required this.id,
     required this.name,
-    this.currentPower = "0.0",
-    this.dailyEnergy = "0.0",
-    this.efficiency = "0",
-    this.totalFlow = "0",
+    required this.modelNumber,
+    required this.surface,
+    required this.locationName,
+    required this.currentPower,
+    required this.dailyEnergy,
+    required this.efficiency,
+    required this.totalFlow,
+    required this.latitude,
+    required this.longitude,
   });
 }

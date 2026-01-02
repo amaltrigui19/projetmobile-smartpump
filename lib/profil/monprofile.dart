@@ -39,7 +39,7 @@ class ProfilePage extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            /// ===== HEADER WITH PROFILE (Matches Design) =====
+            /// ===== HEADER WITH PROFILE =====
             Container(
               width: double.infinity,
               decoration: const BoxDecoration(
@@ -52,15 +52,11 @@ class ProfilePage extends StatelessWidget {
               child: Column(
                 children: [
                   const SizedBox(height: 20),
-                  // Avatar with border effect
                   Container(
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white,
-                        width: 3,
-                      ),
+                      border: Border.all(color: Colors.white, width: 3),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.2),
@@ -72,11 +68,7 @@ class ProfilePage extends StatelessWidget {
                     child: const CircleAvatar(
                       radius: 50,
                       backgroundColor: Colors.white,
-                      child: Icon(
-                        Icons.person,
-                        size: 50,
-                        color: customGreen,
-                      ),
+                      child: Icon(Icons.person, size: 50, color: customGreen),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -90,10 +82,7 @@ class ProfilePage extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 6,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(20),
@@ -115,7 +104,6 @@ class ProfilePage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  // Button: Modifier le profil
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: ElevatedButton.icon(
@@ -151,21 +139,15 @@ class ProfilePage extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Column(
                 children: [
-                  // 1. Services
                   ProfileMenuItem(
                     title: "Services",
                     icon: Icons.design_services,
                     iconBgColor: const Color(0xFF6B8E5D),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const ServicesPage()),
-                      );
-                    },
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ServicesPage())),
                   ),
                   const SizedBox(height: 12),
 
-                  // 2. Gérer les systèmes
+                  // FIX: Passing complete System objects to ManageSystemsPage
                   ProfileMenuItem(
                     title: "Gérer les systèmes",
                     icon: Icons.build,
@@ -176,8 +158,32 @@ class ProfilePage extends StatelessWidget {
                         MaterialPageRoute(
                           builder: (_) => ManageSystemsPage(
                             systems: [
-                              System(id: "1", name: "Système 1"),
-                              System(id: "2", name: "Système 2"),
+                              System(
+                                id: "1",
+                                name: "Système Solaire A",
+                                modelNumber: "SOL-2024",
+                                surface: "2.5",
+                                locationName: "Tunis",
+                                currentPower: "12.5",
+                                dailyEnergy: "45.0",
+                                efficiency: "98",
+                                totalFlow: "0.0",
+                                latitude: 36.8065,
+                                longitude: 10.1815,
+                              ),
+                              System(
+                                id: "2",
+                                name: "Pompe Éolienne B",
+                                modelNumber: "WIND-X",
+                                surface: "1.0",
+                                locationName: "Sfax",
+                                currentPower: "5.2",
+                                dailyEnergy: "18.5",
+                                efficiency: "92",
+                                totalFlow: "150.0",
+                                latitude: 34.7406,
+                                longitude: 10.7603,
+                              ),
                             ],
                           ),
                         ),
@@ -186,21 +192,14 @@ class ProfilePage extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
 
-                  // 3. Paramètres
                   ProfileMenuItem(
                     title: "Paramètres",
                     icon: Icons.settings,
                     iconBgColor: const Color(0xFF89AC7D),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const SettingsPage()),
-                      );
-                    },
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsPage())),
                   ),
                   const SizedBox(height: 30),
 
-                  // 4. Déconnexion
                   ProfileMenuItem(
                     title: "Déconnexion",
                     icon: Icons.logout,
@@ -225,9 +224,7 @@ class ProfilePage extends StatelessWidget {
   }
 }
 
-/// =====================
-/// PROFILE MENU ITEM COMPONENT
-/// =====================
+// Keep your existing ProfileMenuItem component below...
 class ProfileMenuItem extends StatelessWidget {
   final String title;
   final IconData icon;

@@ -25,39 +25,42 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // For now, we take the first system in your list or create a dummy one if empty
+    // FIX: Updated the dummy system to match the new Model requirements
     final displaySystem = systems.isNotEmpty 
         ? systems[0] 
-        : System(id: "1", name: "Système 1");
+        : System(
+            id: "1", 
+            name: "Système 1",
+            modelNumber: "N/A",
+            surface: "0",
+            locationName: "Localisation inconnue",
+            currentPower: "0.0",
+            dailyEnergy: "0.0",
+            efficiency: "95",
+            totalFlow: "0.0",
+            latitude: 36.8065, // Default Tunis
+            longitude: 10.1815,
+          );
 
     return Scaffold(
       backgroundColor: bgMain,
       body: SafeArea(
         child: Column(
           children: [
-            /// 1. HEADER
             _buildHeader(context),
-
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    /// 2. EFFICIENCY CARD (Exactly like photo)
                     _buildEfficiencyCard(),
-
                     const SizedBox(height: 30),
-
-                    /// 3. SINGLE SYSTEM RECTANGLE (Link to Detail)
                     const Text("Vos Systèmes", 
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 12),
                     _buildSystemRectangle(context, displaySystem),
-
                     const SizedBox(height: 30),
-
-                    /// 4. ALERT SECTION (Linked to Alert Detail)
                     _buildAlertsSection(context),
                   ],
                 ),
@@ -69,6 +72,7 @@ class HomePage extends StatelessWidget {
     );
   }
 
+  // --- Header remains the same ---
   Widget _buildHeader(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
@@ -96,6 +100,7 @@ class HomePage extends StatelessWidget {
     );
   }
 
+  // --- Efficiency Card remains the same ---
   Widget _buildEfficiencyCard() {
     return Container(
       width: double.infinity,
@@ -160,6 +165,7 @@ class HomePage extends StatelessWidget {
     );
   }
 
+  // --- Alerts Section remains the same ---
   Widget _buildAlertsSection(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(15),
@@ -184,8 +190,6 @@ class HomePage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 15),
-          
-          /// WRAPPED IN INKWELL FOR LINKING
           InkWell(
             onTap: () => _navigateToAlertDetail(context),
             borderRadius: BorderRadius.circular(15),
@@ -223,7 +227,6 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  /// NAVIGATION TO ALERT DETAIL
   void _navigateToAlertDetail(BuildContext context) {
     Navigator.push(
       context,
@@ -244,7 +247,6 @@ class HomePage extends StatelessWidget {
             child: Column(
               children: [
                 const SizedBox(height: 20),
-                // RED WARNING BOX
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
@@ -263,7 +265,6 @@ class HomePage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 30),
-                // MESSAGE DETAIL BOX
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(20),
