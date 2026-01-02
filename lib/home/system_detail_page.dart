@@ -17,7 +17,7 @@ class SystemDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: bgMain,
+      backgroundColor: const Color.fromARGB(255, 207, 207, 204),
       body: SafeArea(
         child: Column(
           children: [
@@ -56,7 +56,7 @@ class SystemDetailPage extends StatelessWidget {
                     ),
                     Text(
                       "Modèle: ${system.modelNumber} • ${system.locationName}",
-                      style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                      style: TextStyle(fontSize: 14, color: const Color.fromARGB(255, 136, 134, 134)),
                     ),
                     
                     const SizedBox(height: 20),
