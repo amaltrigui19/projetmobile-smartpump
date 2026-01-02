@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'home.dart';
-import 'monprofile.dart';
+import 'home/home.dart';
+import 'profil/monprofile.dart';
 import '../models/system_model.dart';
 import '../models/alert_model.dart';
 

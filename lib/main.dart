@@ -1,8 +1,8 @@
 // main.dart
 import 'package:flutter/material.dart';
-import 'loginpage.dart';
+import 'details/loginpage.dart';
 import 'splashpage.dart';
-import 'monprofile.dart';
+import 'profil/monprofile.dart';
 void
  main() {
   runApp(const MyApp());
