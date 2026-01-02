@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'home.dart';
 import 'monprofile.dart';
+import '../models/system_model.dart';
+import '../models/alert_model.dart';
 
 // Mock data (temporaire)
-const List<System> mockSystems = [];
-const List<AlertItem> mockAlerts = [];
+final List<System> mockSystems = [];
+final List<AlertItem> mockAlerts = [];
 
 class HomeShell extends StatefulWidget {
   const HomeShell({Key? key}) : super(key: key);
@@ -23,12 +25,13 @@ class _HomeShellState extends State<HomeShell> {
           ? HomePage(
               systems: mockSystems,
               alerts: mockAlerts,
-              onSystemClick: (_) {},
-              onAddSystem: () {},
+              onAddSystem: () {
+                // action ajouter système
+              },
             )
           : const ProfilePage(),
 
-      // ✅ BARRE DE NAVIGATION
+      /// ===== BARRE DE NAVIGATION =====
       bottomNavigationBar: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: const BoxDecoration(
@@ -39,34 +42,41 @@ class _HomeShellState extends State<HomeShell> {
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             InkWell(
-              onTap: () {
-                setState(() => _currentIndex = 0);
-              },
+              onTap: () => setState(() => _currentIndex = 0),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Icon(Icons.home, color: Colors.white),
-                  SizedBox(height: 6),
+                children: [
+                  Icon(
+                    Icons.home,
+                    color: _currentIndex == 0 ? Colors.white : Colors.grey,
+                  ),
+                  const SizedBox(height: 6),
                   Text(
                     'accueil',
-                    style: TextStyle(color: Colors.white, fontSize: 12),
+                    style: TextStyle(
+                      color: _currentIndex == 0 ? Colors.white : Colors.grey,
+                      fontSize: 12,
+                    ),
                   ),
                 ],
               ),
             ),
             InkWell(
-              onTap: () {
-                setState(() => _currentIndex = 1);
-              },
+              onTap: () => setState(() => _currentIndex = 1),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Icon(Icons.person, color: Colors.white70),
-                  SizedBox(height: 6),
+                children: [
+                  Icon(
+                    Icons.person,
+                    color: _currentIndex == 1 ? Colors.white : Colors.grey,
+                  ),
+                  const SizedBox(height: 6),
                   Text(
                     'Mon profile',
                     style: TextStyle(
-                        color: Colors.white70, fontSize: 12),
+                      color: _currentIndex == 1 ? Colors.white : Colors.grey,
+                      fontSize: 12,
+                    ),
                   ),
                 ],
               ),

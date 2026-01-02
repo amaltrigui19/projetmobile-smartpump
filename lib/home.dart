@@ -1,95 +1,81 @@
 import 'package:flutter/material.dart';
 import 'details/system_detail_page.dart';
+import 'models/system_model.dart';
+import 'models/alert_model.dart';
+import 'details/ajoutsystem.dart'; 
 
-/// =====================
-/// MODELS
-/// =====================
-class System {
-  final String id;
-  final String name;
-  final String currentPower;
-  final String dailyEnergy;
-  final String efficiency;
-  final String totalFlow;
-
-  System({
-    required this.id,
-    required this.name,
-    required this.currentPower,
-    required this.dailyEnergy,
-    required this.efficiency,
-    required this.totalFlow,
-  });
-}
-
-class AlertItem {
-  final String id;
-  final String title;
-  final String? subtitle;
-
-  AlertItem({required this.id, required this.title, this.subtitle});
-}
-
-/// =====================
-/// HOME PAGE (CONTENU SEUL)
-/// =====================
 class HomePage extends StatelessWidget {
   final List<System> systems;
   final List<AlertItem> alerts;
-  final Function(System) onSystemClick;
   final VoidCallback onAddSystem;
 
   const HomePage({
     super.key,
     required this.systems,
     required this.alerts,
-    required this.onSystemClick,
     required this.onAddSystem,
   });
 
   static const Color bgMain = Color(0xFFF5F5F0);
-  static const Color headerGreen = Color(0xFF4A5D3F);
+  static const Color darkGreen = Color(0xFF4A5D3F);
+  static const Color midGreen = Color(0xFF5D7350);
   static const Color lightGreen = Color(0xFFD4E4C8);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: bgMain,
-
       body: SafeArea(
         child: Column(
           children: [
             /// ===== HEADER =====
             Container(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
               decoration: const BoxDecoration(
-                color: headerGreen,
+                color: darkGreen,
                 borderRadius:
-                    BorderRadius.vertical(bottom: Radius.circular(24)),
+                    BorderRadius.vertical(bottom: Radius.circular(26)),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Salut foulen',
-                    style: TextStyle(color: Colors.white, fontSize: 18),
+                  const CircleAvatar(
+                    radius: 20,
+                    backgroundColor: Colors.white,
+                    child: Icon(Icons.person, color: darkGreen),
                   ),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF5D7350),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    onPressed: onAddSystem,
-                    child: const Row(
-                      children: [
-                        Text('Ajouter'),
-                        SizedBox(width: 6),
-                        Icon(Icons.add, size: 18),
-                      ],
-                    ),
+                  const SizedBox(width: 12),
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("Bonjour",
+                          style: TextStyle(
+                              color: Colors.white70, fontSize: 12)),
+                      Text("Foulen",
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600)),
+                    ],
                   ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.add_circle,
+                        color: Colors.white, size: 28),
+                    onPressed: () async {
+                      // Navigation vers la page d'ajout de système
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AddSystemPage(),
+                        ),
+                      );
+                      
+                      // Si des données sont retournées, appeler le callback
+                      if (result != null) {
+                        onAddSystem();
+                      }
+                    },
+                  )
                 ],
               ),
             ),
@@ -100,16 +86,23 @@ class HomePage extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     /// ===== EFFICACITÉ CARD =====
                     Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(24),
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF5D7350), Color(0xFF4A5D3F)],
+                          colors: [midGreen, darkGreen],
                         ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: darkGreen.withOpacity(0.3),
+                            blurRadius: 10,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
                       ),
                       child: Row(
                         children: [
@@ -117,70 +110,118 @@ class HomePage extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Efficacité',
+                                Text("Efficacité",
                                     style: TextStyle(
-                                        color: Colors.white70, fontSize: 13)),
-                                SizedBox(height: 6),
-                                Text('95%',
+                                        color: Colors.white70,
+                                        fontSize: 13)),
+                                SizedBox(height: 8),
+                                Text("95%",
                                     style: TextStyle(
                                         color: Colors.white,
-                                        fontSize: 42,
+                                        fontSize: 44,
                                         fontWeight: FontWeight.bold)),
-                                SizedBox(height: 6),
-                                Text('Gérez votre énergie',
-                                    style: TextStyle(
-                                        color: Colors.white70, fontSize: 12)),
-                                Text('pour produire',
-                                    style: TextStyle(
-                                        color: Colors.white70, fontSize: 12)),
-                                Text('efficacement',
-                                    style: TextStyle(
-                                        color: Colors.white70, fontSize: 12)),
+                                SizedBox(height: 8),
+                                Text(
+                                  "Optimisez votre énergie\npour une production efficace",
+                                  style: TextStyle(
+                                      color: Colors.white70, fontSize: 12),
+                                ),
                               ],
                             ),
                           ),
                           Container(
-                            width: 110,
-                            height: 80,
-                            margin: const EdgeInsets.only(left: 8),
+                            width: 90,
+                            height: 90,
                             clipBehavior: Clip.hardEdge,
                             decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(14),
                             ),
                             child: Image.asset(
                               'assets/images/image 27.png',
                               fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: const Icon(
+                                    Icons.solar_power,
+                                    size: 40,
+                                    color: Colors.white,
+                                  ),
+                                );
+                              },
                             ),
                           ),
                         ],
                       ),
                     ),
 
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 24),
 
-                    /// ===== SYSTEMS =====
+                    /// ===== SYSTEMS TITLE =====
+                    const Text(
+                      "Mes systèmes",
+                      style: TextStyle(
+                        color: darkGreen,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    /// ===== SYSTEMS LIST =====
                     ...systems.map(
                       (system) => Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.only(bottom: 12),
                         child: InkWell(
-                          onTap: () => onSystemClick(system),
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(18),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    SystemDetailPage(system: system),
+                              ),
+                            );
+                          },
                           child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 14),
+                            padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: lightGreen,
-                              borderRadius: BorderRadius.circular(14),
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(18),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black12,
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
                             ),
                             child: Row(
-                              mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(system.name,
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: lightGreen,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(Icons.solar_power,
+                                      color: darkGreen),
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: Text(
+                                    system.name,
                                     style: const TextStyle(
-                                        color: headerGreen, fontSize: 15)),
+                                        color: darkGreen,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w500),
+                                  ),
+                                ),
                                 const Icon(Icons.chevron_right,
-                                    color: headerGreen),
+                                    color: darkGreen),
                               ],
                             ),
                           ),
@@ -188,29 +229,34 @@ class HomePage extends StatelessWidget {
                       ),
                     ),
 
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 24),
 
                     /// ===== ALERTES =====
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(18),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 6,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           _alertHeader(),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 12),
                           ...alerts.map(
                             (alert) => Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
+                              padding: const EdgeInsets.only(bottom: 10),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 12),
+                                padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
                                   color: const Color(0xFFE8F0E0),
-                                  borderRadius: BorderRadius.circular(10),
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Row(
                                   children: [
@@ -221,7 +267,9 @@ class HomePage extends StatelessWidget {
                                         children: [
                                           Text(alert.title,
                                               style: const TextStyle(
-                                                  color: headerGreen)),
+                                                  color: darkGreen,
+                                                  fontWeight:
+                                                      FontWeight.w500)),
                                           if (alert.subtitle != null)
                                             Text(alert.subtitle!,
                                                 style: const TextStyle(
@@ -251,21 +299,19 @@ class HomePage extends StatelessWidget {
   }
 
   Widget _alertHeader() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFF5D7350),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: const Row(
-        children: [
-          Icon(Icons.warning_amber_rounded,
-              color: Colors.white, size: 18),
-          SizedBox(width: 8),
-          Text('Derniers alertes',
-              style: TextStyle(color: Colors.white, fontSize: 13)),
-        ],
-      ),
+    return Row(
+      children: const [
+        Icon(Icons.warning_amber_rounded,
+            color: Colors.orange, size: 18),
+        SizedBox(width: 8),
+        Text(
+          'Dernières alertes',
+          style: TextStyle(
+              color: darkGreen,
+              fontSize: 14,
+              fontWeight: FontWeight.bold),
+        ),
+      ],
     );
   }
 }

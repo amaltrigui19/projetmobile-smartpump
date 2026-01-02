@@ -95,7 +95,10 @@ class _LoginPageState extends State<LoginPage> {
                         },
                         child: const Text(
                           'mot de passe oublié ?',
-                          style: TextStyle(fontSize: 13),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: primaryGreen,
+                          ),
                         ),
                       ),
                     ),
