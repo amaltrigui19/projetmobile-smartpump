@@ -31,6 +31,11 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_svg: ^2.0.0
+  http: ^1.1.0
+  google_maps_flutter: ^2.5.3
+  geocoding: ^3.0.0 # Pour transformer les coordonnées en nom de ville
+  flutter_map: ^6.1.0
+  latlong2: ^0.9.1
 
 
 

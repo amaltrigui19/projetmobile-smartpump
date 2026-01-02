@@ -1,172 +1,117 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
-class WeatherPage extends StatelessWidget {
-  const WeatherPage({super.key});
+class WeatherPage extends StatefulWidget {
+  final double lat;
+  final double lon;
+  final String systemName;
+
+  const WeatherPage({
+    super.key,
+    required this.lat,
+    required this.lon,
+    required this.systemName,
+  });
+
+  @override
+  State<WeatherPage> createState() => _WeatherPageState();
+}
+
+class _WeatherPageState extends State<WeatherPage> {
+  late Future<Map<String, dynamic>> _weatherData;
+
+  @override
+  void initState() {
+    super.initState();
+    _weatherData = fetchWeather();
+  }
+
+  Future<Map<String, dynamic>> fetchWeather() async {
+    // Open-Meteo API using the passed coordinates
+    final url = Uri.parse(
+        'https://api.open-meteo.com/v1/forecast?latitude=${widget.lat}&longitude=${widget.lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset&timezone=auto');
+
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Impossible de charger la météo');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-
-      // ----------- TOP BAR -----------
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(50),
-        child: Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFF4A6B3E),
-            borderRadius: const BorderRadius.only(
-              bottomLeft: Radius.circular(20),
-              bottomRight: Radius.circular(20),
-            ),
-            boxShadow: const [
-              BoxShadow(
-                color: Colors.black26,
-                blurRadius: 6,
-                offset: Offset(0, 3),
-              ),
-            ],
-          ),
-          child: AppBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            title: const Text("Météo actuelle",
-                style: TextStyle(color: Colors.white)),
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF4A6B3E),
+        elevation: 0,
+        title: Text("Météo: ${widget.systemName}", style: const TextStyle(color: Colors.white)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
         ),
       ),
+      body: FutureBuilder<Map<String, dynamic>>(
+        future: _weatherData,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator(color: Color(0xFF4A6B3E)));
+          } else if (snapshot.hasError) {
+            return Center(child: Text("Erreur: ${snapshot.error}"));
+          } else {
+            final current = snapshot.data!['current'];
+            final daily = snapshot.data!['daily'];
 
-      // ----------- BODY -----------
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          children: [
-            // BIG WEATHER CARD
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFFA2C392),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(18),
+              child: Column(
                 children: [
-                  // LEFT PART
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text("Maintenant",
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          )),
-                      SizedBox(height: 8),
-                      Text(
-                        "26°",
-                        style: TextStyle(
-                          fontSize: 50,
-                          fontWeight: FontWeight.bold,
+                  // WEATHER CARD
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFA2C392),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text("Température", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            Text("${current['temperature_2m']}°C", 
+                                style: const TextStyle(fontSize: 45, fontWeight: FontWeight.bold)),
+                            Text("Max: ${daily['temperature_2m_max'][0]}° Min: ${daily['temperature_2m_min'][0]}°"),
+                          ],
                         ),
-                      ),
-                      Text("Max : 28°   Min : 24°"),
-                    ],
+                        const Icon(Icons.cloud_queue, size: 60, color: Colors.white),
+                      ],
+                    ),
                   ),
-
-                  // RIGHT PART
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                  const SizedBox(height: 25),
+                  GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 15,
+                    crossAxisSpacing: 15,
                     children: [
-                      const Text("Nuageux",
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.w500)),
-                      const SizedBox(height: 4),
-                      const Text("Ressenti 31°"),
-                      const SizedBox(height: 4),
-                      Image.asset(
-                        "assets/icons/cloud_sun.png",
-                        width: 70,
-                      )
+                      _infoCard(Icons.air, "Vent", "${current['wind_speed_10m']} km/h"),
+                      _infoCard(Icons.water_drop, "Précip.", "${current['precipitation']} mm"),
+                      _infoCard(Icons.sunny, "Soleil", "${daily['sunrise'][0].split('T')[1]}"),
+                      _infoCard(Icons.thermostat, "Ressenti", "${current['apparent_temperature']}°C"),
                     ],
-                  ),
+                  )
                 ],
               ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // FILTER BUTTONS
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _weatherTab("Aujourd’hui", true),
-                _weatherTab("Demain", false),
-                _weatherTab("10 jours", false),
-              ],
-            ),
-
-            const SizedBox(height: 20),
-
-            // SMALL WEATHER INFO CARDS
-            Column(
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: _infoCard(
-                          Icons.air, "Vitesse du vent", "12 km/h"),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _infoCard(
-                          Icons.water_drop, "Précipitation", "86%"),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _infoCard(
-                          Icons.sunny, "Lev/Cou du soleil", "6:03 / 17:34"),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child:
-                          _infoCard(Icons.cloud, "Humidité", "60%"),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ],
-        ),
+            );
+          }
+        },
       ),
-
-      // ----------- BOTTOM NAV BAR -----------
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: const Color(0xFF4A6B3E),
-        selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.white70,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "accueil"),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Mon profile"),
-        ],
-      ),
-    );
-  }
-
-  // ---- SMALL COMPONENTS ----
-  Widget _weatherTab(String text, bool selected) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      decoration: BoxDecoration(
-        color: selected ? Color(0xFFA2C392) : Color(0xFFEAEFE7),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(text, style: const TextStyle(fontSize: 14)),
     );
   }
 
@@ -174,19 +119,16 @@ class WeatherPage extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFEAF5E4),
+        color: const Color(0xFFF0F4ED),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 28),
-          const SizedBox(height: 10),
-          Text(title, style: const TextStyle(fontSize: 15)),
+          Icon(icon, color: const Color(0xFF4A6B3E)),
           const SizedBox(height: 8),
-          Text(value,
-              style: const TextStyle(
-                  fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(title, style: const TextStyle(color: Colors.grey)),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         ],
       ),
     );
