@@ -34,6 +34,7 @@ class _AddSystemPageState extends State<AddSystemPage> {
 
   void _saveSystem() {
     if (_formKey.currentState!.validate()) {
+      // Création de l'objet System avec toutes les propriétés requises
       final newSystem = System(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         name: selectedModelType ?? "Inconnu",
@@ -48,6 +49,24 @@ class _AddSystemPageState extends State<AddSystemPage> {
         longitude: _lon,
       );
 
+      // Affiche le message de succès
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: const [
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 12),
+              Text('Système ajouté avec succès!'),
+            ],
+          ),
+          backgroundColor: customGreen,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+
+      // Retourne l'objet à l'écran précédent
       Navigator.pop(context, newSystem);
     }
   }
@@ -92,9 +111,24 @@ class _AddSystemPageState extends State<AddSystemPage> {
               _buildMapSection(),
               
               const SizedBox(height: 25),
-              _buildTextField(_locationController, "Nom du site (ex: Ferme Nord)", Icons.map),
-              _buildTextField(_modelNumberController, "Numéro de modèle", Icons.tag),
-              _buildTextField(_surfaceController, "Superficie (Hectares)", Icons.landscape, keyboard: TextInputType.number),
+              _buildTextField(
+                controller: _locationController, 
+                hint: "Nom du site (ex: Ferme Nord)", 
+                icon: Icons.map
+              ),
+              const SizedBox(height: 15),
+              _buildTextField(
+                controller: _modelNumberController, 
+                hint: "Numéro de modèle", 
+                icon: Icons.tag
+              ),
+              const SizedBox(height: 15),
+              _buildTextField(
+                controller: _surfaceController, 
+                hint: "Superficie (Hectares)", 
+                icon: Icons.landscape, 
+                keyboardType: TextInputType.number
+              ),
               
               const SizedBox(height: 30),
               _submitButton(),
@@ -124,7 +158,6 @@ class _AddSystemPageState extends State<AddSystemPage> {
                 initialCenter: LatLng(_lat, _lon),
                 initialZoom: 11.0,
                 onPositionChanged: (dynamic position, bool hasGesture) {
-                  // Met à jour les variables et l'affichage en temps réel
                   setState(() {
                     _lat = position.center.latitude;
                     _lon = position.center.longitude;
@@ -138,18 +171,14 @@ class _AddSystemPageState extends State<AddSystemPage> {
                 ),
               ],
             ),
-            // Le marqueur de visée central
             const Center(
               child: Padding(
                 padding: EdgeInsets.only(bottom: 35),
                 child: Icon(Icons.location_on, color: Colors.red, size: 42),
               ),
             ),
-            // Affichage des coordonnées GPS en bas de la carte
             Positioned(
-              bottom: 12,
-              left: 12,
-              right: 12,
+              bottom: 12, left: 12, right: 12,
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                 decoration: BoxDecoration(
@@ -165,9 +194,7 @@ class _AddSystemPageState extends State<AddSystemPage> {
                     Text(
                       "Lat: ${_lat.toStringAsFixed(5)} | Lon: ${_lon.toStringAsFixed(5)}",
                       style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: customGreen,
+                        fontSize: 12, fontWeight: FontWeight.bold, color: customGreen,
                         fontFamily: 'monospace',
                       ),
                     ),
@@ -181,43 +208,51 @@ class _AddSystemPageState extends State<AddSystemPage> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String hint, IconData icon, {TextInputType keyboard = TextInputType.text}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 15),
-      child: TextFormField(
-        controller: controller,
-        keyboardType: keyboard,
-        decoration: InputDecoration(
-          hintText: hint,
-          prefixIcon: Icon(icon, color: customGreen),
-          filled: true,
-          fillColor: Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide(color: Colors.grey.shade200),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide(color: Colors.grey.shade200),
-          ),
-        ),
-        validator: (value) => value == null || value.isEmpty ? 'Ce champ est requis' : null,
+  Widget _buildDropdown() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: DropdownButtonFormField<String>(
+        value: selectedModelType,
+        items: modelTypes.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+        onChanged: (v) => setState(() => selectedModelType = v),
+        decoration: const InputDecoration(border: InputBorder.none, hintText: "Choisir le type"),
+        validator: (value) => value == null ? 'Veuillez choisir un type' : null,
       ),
     );
   }
 
-  Widget _buildDropdown() {
-    return DropdownButtonFormField<String>(
-      value: selectedModelType,
-      items: modelTypes.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
-      onChanged: (v) => setState(() => selectedModelType = v),
-      decoration: InputDecoration(
-        labelText: "Type de système",
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String hint,
+    TextInputType keyboardType = TextInputType.text,
+    required IconData icon,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
       ),
-      validator: (value) => value == null ? 'Veuillez choisir un type' : null,
+      child: TextFormField(
+        controller: controller,
+        keyboardType: keyboardType,
+        style: const TextStyle(color: customGreen, fontSize: 15, fontWeight: FontWeight.w500),
+        decoration: InputDecoration(
+          hintText: hint,
+          prefixIcon: Icon(icon, color: customGreen.withOpacity(0.6), size: 22),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        ),
+        validator: (value) => (value == null || value.isEmpty) ? 'Ce champ est requis' : null,
+      ),
     );
   }
 
@@ -230,11 +265,10 @@ class _AddSystemPageState extends State<AddSystemPage> {
         style: ElevatedButton.styleFrom(
           backgroundColor: customGreen,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-          elevation: 2,
         ),
         child: const Text(
           "ENREGISTRER LE SYSTÈME",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1.1),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
     );

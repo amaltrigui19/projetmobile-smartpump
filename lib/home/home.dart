@@ -16,10 +16,12 @@ class HomePage extends StatelessWidget {
     required this.onAddSystem,
   });
 
-  static const Color darkGreen = Color(0xFF2D442E);
-  static const Color lightGreenTile = Color(0xFFD7E5D0);
-  static const Color bgMain = Color(0xFFF9F9F7);
-  static const Color alertLabelGreen = Color(0xFF3B523C);
+  static const Color darkGreen = Color(0xFF4A6B3E);       // Vert principal foncé
+  static const Color mediumGreen = Color(0xFF55744A);      // Vert moyen
+  static const Color lightGreen = Color(0xFFCFEBC1);       // Vert clair
+  static const Color bgMain = Color(0xFFF9F9F7);           // Fond principal
+  static const Color accentGreen = Color(0xFF3B523C);      // Vert accent pour textes
+  static const Color alertLabelGreen = Color(0xFF4A6B3E);  // Vert pour label alertes
 
   @override
   Widget build(BuildContext context) {
@@ -144,7 +146,7 @@ class HomePage extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
         decoration: BoxDecoration(
-          color: lightGreenTile,
+          color: lightGreen,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
@@ -202,7 +204,7 @@ class HomePage extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: lightGreenTile.withOpacity(0.4),
+        color: lightGreen.withOpacity(0.4),
         borderRadius: BorderRadius.circular(15),
       ),
       child: Row(
