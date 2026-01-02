@@ -1,10 +1,60 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ServicesPage extends StatelessWidget {
   const ServicesPage({super.key});
 
   static const Color customGreen = Color(0xFF4A5D3F);
   static const Color bgColor = Color(0xFFF7F8F4);
+
+  // --- Appel téléphonique ---
+  Future<void> _makePhoneCall(String phoneNumber) async {
+    final Uri uri = Uri(
+      scheme: 'tel',
+      path: phoneNumber,
+    );
+
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else {
+      throw 'Impossible d’ouvrir l’application téléphone';
+    }
+  }
+
+  // --- Envoyer un Email ---
+  Future<void> _sendEmail(String email) async {
+    final Uri uri = Uri(
+      scheme: 'mailto',
+      path: email,
+      queryParameters: {
+        'subject': 'Contact',
+        'body': 'Bonjour,',
+      },
+    );
+
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else {
+      throw 'Impossible d’ouvrir l’application email';
+    }
+  }
+
+  // --- Envoyer un SMS ---
+  Future<void> _sendSMS(String phoneNumber) async {
+    final Uri uri = Uri(
+      scheme: 'sms',
+      path: phoneNumber,
+      queryParameters: {
+        'body': 'Bonjour,',
+      },
+    );
+
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else {
+      throw 'Impossible d’ouvrir l’application SMS';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,24 +87,33 @@ class ServicesPage extends StatelessWidget {
               style: TextStyle(fontSize: 16, color: Colors.black54),
             ),
             const SizedBox(height: 40),
-            
-            // --- Contact Options ---
+
+            // --- Appeler ---
             _buildContactCard(
               icon: Icons.phone_outlined,
               title: "Appeler",
               subtitle: "+111 22333444",
+              onTap: () => _makePhoneCall("+11122333444"),
             ),
+
             const SizedBox(height: 20),
+
+            // --- Email ---
             _buildContactCard(
               icon: Icons.email_outlined,
-              title: "@Email",
+              title: "Email",
               subtitle: "example@email.com",
+              onTap: () => _sendEmail("example@email.com"),
             ),
+
             const SizedBox(height: 20),
+
+            // --- SMS ---
             _buildContactCard(
               icon: Icons.chat_bubble_outline,
               title: "Message",
               subtitle: "+111 22333444",
+              onTap: () => _sendSMS("+11122333444"),
             ),
           ],
         ),
@@ -62,44 +121,57 @@ class ServicesPage extends StatelessWidget {
     );
   }
 
-  Widget _buildContactCard({required IconData icon, required String title, required String subtitle}) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 25),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(50), // Matches the oval shape in your photo
-        border: Border.all(color: Colors.black12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: customGreen, size: 30),
-          const SizedBox(width: 25),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: customGreen,
+  // --- Contact Card ---
+  Widget _buildContactCard({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    VoidCallback? onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(50),
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 25),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(50),
+          border: Border.all(color: Colors.black12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: customGreen, size: 30),
+            const SizedBox(width: 25),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: customGreen,
+                  ),
                 ),
-              ),
-              Text(
-                subtitle,
-                style: const TextStyle(fontSize: 14, color: Colors.black45),
-              ),
-            ],
-          ),
-        ],
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.black45,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
