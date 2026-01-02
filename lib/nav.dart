@@ -35,7 +35,7 @@ class _HomeShellState extends State<HomeShell> {
       bottomNavigationBar: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: const BoxDecoration(
-          color: Color(0xFF4A5D3F),
+          color: Color(0xFF4A6B3E),
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Row(
