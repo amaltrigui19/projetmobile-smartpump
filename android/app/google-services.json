@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "69282659258",
+    "project_id": "smartpump-38295",
+    "storage_bucket": "smartpump-38295.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:69282659258:android:9aa076b06210c16b09bb83",
+        "android_client_info": {
+          "package_name": "com.example.projetmobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBtDThp0svur5MEVFwF_ykdCKKps8BKuN4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

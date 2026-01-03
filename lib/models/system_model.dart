@@ -8,8 +8,8 @@ class System {
   final String dailyEnergy;
   final String efficiency;
   final String totalFlow;
-  final double latitude;  // Vérifiez que c'est bien présent
-  final double longitude; // Vérifiez que c'est bien présent
+  final double latitude;
+  final double longitude;
 
   System({
     required this.id,
@@ -24,4 +24,37 @@ class System {
     required this.latitude,
     required this.longitude,
   });
+
+  // Create a System object from Firestore document
+  factory System.fromMap(Map<String, dynamic> data, String documentId) {
+    return System(
+      id: documentId,
+      name: data['name'] ?? '',
+      modelNumber: data['modelNumber'] ?? '',
+      surface: data['surface'] ?? '',
+      locationName: data['locationName'] ?? '',
+      currentPower: data['currentPower'] ?? '',
+      dailyEnergy: data['dailyEnergy'] ?? '',
+      efficiency: data['efficiency'] ?? '',
+      totalFlow: data['totalFlow'] ?? '',
+      latitude: (data['latitude'] ?? 0.0).toDouble(),
+      longitude: (data['longitude'] ?? 0.0).toDouble(),
+    );
+  }
+
+  // Convert System object to Map for Firestore
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'modelNumber': modelNumber,
+      'surface': surface,
+      'locationName': locationName,
+      'currentPower': currentPower,
+      'dailyEnergy': dailyEnergy,
+      'efficiency': efficiency,
+      'totalFlow': totalFlow,
+      'latitude': latitude,
+      'longitude': longitude,
+    };
+  }
 }

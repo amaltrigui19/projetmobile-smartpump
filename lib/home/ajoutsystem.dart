@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart'; 
-import '../models/system_model.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 const Color customGreen = Color(0xFF4A5D3F);
 const Color bgColor = Color(0xFFF7F8F4);
@@ -24,6 +25,9 @@ class _AddSystemPageState extends State<AddSystemPage> {
   // Position par défaut (Tunis)
   double _lat = 36.8065;
   double _lon = 10.1815;
+  
+  // Loading state
+  bool _isLoading = false;
 
   final List<String> modelTypes = [
     'Système solaire',
@@ -32,42 +36,74 @@ class _AddSystemPageState extends State<AddSystemPage> {
     'Système de stockage',
   ];
 
-  void _saveSystem() {
+  // ============================
+  // FIREBASE SAVE FUNCTION
+  // ============================
+  Future<void> _saveSystem() async {
     if (_formKey.currentState!.validate()) {
-      // Création de l'objet System avec toutes les propriétés requises
-      final newSystem = System(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        name: selectedModelType ?? "Inconnu",
-        modelNumber: _modelNumberController.text,
-        surface: _surfaceController.text,
-        locationName: _locationController.text,
-        currentPower: "0.0",
-        dailyEnergy: "0.0",
-        efficiency: "95",
-        totalFlow: "0.0",
-        latitude: _lat,
-        longitude: _lon,
-      );
+      setState(() => _isLoading = true);
 
-      // Affiche le message de succès
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: const [
-              Icon(Icons.check_circle, color: Colors.white),
-              SizedBox(width: 12),
-              Text('Système ajouté avec succès!'),
-            ],
-          ),
-          backgroundColor: customGreen,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      try {
+        final user = FirebaseAuth.instance.currentUser;
 
-      // Retourne l'objet à l'écran précédent
-      Navigator.pop(context, newSystem);
+        if (user == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Erreur : Utilisateur non connecté")),
+          );
+          return;
+        }
+
+        // Data to save in Firestore
+        final systemData = {
+          'name': selectedModelType ?? "Inconnu",
+          'modelNumber': _modelNumberController.text.trim(),
+          'surface': _surfaceController.text.trim(),
+          'locationName': _locationController.text.trim(),
+          'latitude': _lat,
+          'longitude': _lon,
+          'createdAt': FieldValue.serverTimestamp(),
+          // Default initial values for IoT data
+          'currentPower': "0.0",
+          'dailyEnergy': "0.0",
+          'efficiency': "95",
+          'totalFlow': "0.0",
+        };
+
+        // Save to users -> [uid] -> systems collection
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .collection('systems')
+            .add(systemData);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.white),
+                  SizedBox(width: 12),
+                  Text('Système enregistré sur le Cloud !'),
+                ],
+              ),
+              backgroundColor: customGreen,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+          // Just pop, no need to return object (StreamBuilder updates automatically)
+          Navigator.pop(context);
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Erreur: ${e.toString()}")),
+          );
+        }
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -84,58 +120,60 @@ class _AddSystemPageState extends State<AddSystemPage> {
         elevation: 0,
         iconTheme: const IconThemeData(color: customGreen),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "Informations générales",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: customGreen),
-              ),
-              const SizedBox(height: 15),
-              _buildDropdown(),
-              const SizedBox(height: 25),
-              
-              const Text(
-                "Position géographique",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: customGreen),
-              ),
-              const Text(
-                "Faites glisser la carte pour viser votre site",
-                style: TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-              const SizedBox(height: 10),
-              _buildMapSection(),
-              
-              const SizedBox(height: 25),
-              _buildTextField(
-                controller: _locationController, 
-                hint: "Nom du site (ex: Ferme Nord)", 
-                icon: Icons.map
-              ),
-              const SizedBox(height: 15),
-              _buildTextField(
-                controller: _modelNumberController, 
-                hint: "Numéro de modèle", 
-                icon: Icons.tag
-              ),
-              const SizedBox(height: 15),
-              _buildTextField(
-                controller: _surfaceController, 
-                hint: "Superficie (Hectares)", 
-                icon: Icons.landscape, 
-                keyboardType: TextInputType.number
-              ),
-              
-              const SizedBox(height: 30),
-              _submitButton(),
-            ],
+      body: _isLoading 
+        ? const Center(child: CircularProgressIndicator(color: customGreen))
+        : SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Informations générales",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: customGreen),
+                ),
+                const SizedBox(height: 15),
+                _buildDropdown(),
+                const SizedBox(height: 25),
+                
+                const Text(
+                  "Position géographique",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: customGreen),
+                ),
+                const Text(
+                  "Faites glisser la carte pour viser votre site",
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                const SizedBox(height: 10),
+                _buildMapSection(),
+                
+                const SizedBox(height: 25),
+                _buildTextField(
+                  controller: _locationController, 
+                  hint: "Nom du site (ex: Ferme Nord)", 
+                  icon: Icons.map
+                ),
+                const SizedBox(height: 15),
+                _buildTextField(
+                  controller: _modelNumberController, 
+                  hint: "Numéro de modèle", 
+                  icon: Icons.tag
+                ),
+                const SizedBox(height: 15),
+                _buildTextField(
+                  controller: _surfaceController, 
+                  hint: "Superficie (Hectares)", 
+                  icon: Icons.landscape, 
+                  keyboardType: TextInputType.number
+                ),
+                
+                const SizedBox(height: 30),
+                _submitButton(),
+              ],
+            ),
           ),
         ),
-      ),
     );
   }
 
@@ -146,7 +184,8 @@ class _AddSystemPageState extends State<AddSystemPage> {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.grey.shade300),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
+          // Updated for Flutter 3.38 compatibility
+          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
       child: ClipRRect(
@@ -182,9 +221,9 @@ class _AddSystemPageState extends State<AddSystemPage> {
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: customGreen.withOpacity(0.2)),
+                  border: Border.all(color: customGreen.withValues(alpha: 0.2)),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -217,7 +256,7 @@ class _AddSystemPageState extends State<AddSystemPage> {
         border: Border.all(color: Colors.grey.shade200),
       ),
       child: DropdownButtonFormField<String>(
-        value: selectedModelType,
+        initialValue: selectedModelType,
         items: modelTypes.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
         onChanged: (v) => setState(() => selectedModelType = v),
         decoration: const InputDecoration(border: InputBorder.none, hintText: "Choisir le type"),
@@ -238,7 +277,7 @@ class _AddSystemPageState extends State<AddSystemPage> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
       child: TextFormField(
@@ -247,7 +286,7 @@ class _AddSystemPageState extends State<AddSystemPage> {
         style: const TextStyle(color: customGreen, fontSize: 15, fontWeight: FontWeight.w500),
         decoration: InputDecoration(
           hintText: hint,
-          prefixIcon: Icon(icon, color: customGreen.withOpacity(0.6), size: 22),
+          prefixIcon: Icon(icon, color: customGreen.withValues(alpha: 0.6), size: 22),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
         ),

@@ -79,7 +79,7 @@ class ChangerPasswordPage extends StatelessWidget {
   }
 
   Widget _buildButton(String label, Color bg, Color text) {
-    return Container(
+    return SizedBox(
       width: 140,
       height: 50,
       child: ElevatedButton(

@@ -9,7 +9,7 @@ final List<System> mockSystems = [];
 final List<AlertItem> mockAlerts = [];
 
 class HomeShell extends StatefulWidget {
-  const HomeShell({Key? key}) : super(key: key);
+  const HomeShell({super.key});
 
   @override
   State<HomeShell> createState() => _HomeShellState();

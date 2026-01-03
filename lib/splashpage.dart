@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({Key? key}) : super(key: key);
+  const SplashScreen({super.key});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -284,11 +284,11 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
  Widget _buildLogo() {
-  return Container(
+  return SizedBox(
     width: 280,
     height: 280,
     child: Center(
-      child: Container(
+      child: SizedBox(
         width: 200,
         height: 200,
         child: ClipRRect(

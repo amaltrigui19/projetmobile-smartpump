@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'passwordoublie.dart';
-import 'inscription.dart';
-import '../nav.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'inscription.dart'; // Assurez-vous que le chemin est correct
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({Key? key}) : super(key: key);
+  const LoginPage({super.key});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -13,7 +12,13 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  bool _obscure = true;
+  
+  bool _isLoading = false;
+  bool _obscurePassword = true;
+
+  static const Color primaryGreen = Color(0xFF3E6B3E);
+  static const Color borderGreen = Color(0xFF9CBF93);
+  static const Color lightGrey = Color(0xFF98AB94);
 
   @override
   void dispose() {
@@ -22,143 +27,114 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
+  Future<void> _signIn() async {
+    final phone = _phoneController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (phone.isEmpty || password.isEmpty) {
+      _showSnackBar('Veuillez remplir tous les champs');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      // Connexion avec l'email simulé (phone@smartsolar.com) comme défini dans l'inscription
+      final userEmail = "$phone@smartsolar.com";
+      
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: userEmail,
+        password: password,
+      );
+
+      // Si réussi, redirection vers le profil ou l'accueil
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/profile');
+      }
+      
+    } on FirebaseAuthException catch (e) {
+      String errorMessage = "Erreur de connexion";
+      if (e.code == 'user-not-found') errorMessage = "Utilisateur non trouvé";
+      if (e.code == 'wrong-password') errorMessage = "Mot de passe incorrect";
+      
+      _showSnackBar(errorMessage);
+    } catch (e) {
+      _showSnackBar("Erreur: $e");
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: primaryGreen),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    const Color primaryGreen = Color(0xFF3E6B3E);
-    const Color borderGreen = Color(0xFF9CBF93);
+    final Size size = MediaQuery.of(context).size;
 
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              const SizedBox(height: 24),
-
-              // ===== TITRE =====
-              Text(
-                'Connexion',
-                style: TextStyle(
-                  fontSize: 36,
-                  fontWeight: FontWeight.w700,
-                  color: primaryGreen,
-                ),
-              ),
-
-              const SizedBox(height: 18),
-
-              // ===== AVATAR =====
-              const CircleAvatar(
-                radius: 44,
-                backgroundImage: AssetImage('assets/images/avatar.png'),
-              ),
-
-              const SizedBox(height: 26),
-
-              // ===== FORMULAIRE =====
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 28),
+        child: Stack(
+          children: [
+            SingleChildScrollView(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 32.0),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _buildRoundedInput(
-                      controller: _phoneController,
-                      hintText: 'numéro de téléphone',
-                      prefix: Icons.phone,
-                      borderColor: borderGreen,
-                    ),
-
-                    const SizedBox(height: 14),
-
-                    _buildRoundedInput(
-                      controller: _passwordController,
-                      hintText: 'mot de passe',
-                      prefix: Icons.lock,
-                      borderColor: borderGreen,
-                      isPassword: true,
-                      obscure: _obscure,
-                      onToggleObscure: () =>
-                          setState(() => _obscure = !_obscure),
-                    ),
-
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  const ForgotPasswordPage(),
-                            ),
-                          );
-                        },
-                        child: const Text(
-                          'mot de passe oublié ?',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: primaryGreen,
-                          ),
-                        ),
+                    const SizedBox(height: 60),
+                    Text(
+                      'Connexion',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: primaryGreen,
                       ),
                     ),
-
-                    const SizedBox(height: 10),
-
-                    // ===== BOUTON =====
+                    const SizedBox(height: 40),
+                    _buildInput(
+                      controller: _phoneController,
+                      hint: 'Numéro de téléphone',
+                      icon: Icons.phone,
+                      keyboardType: TextInputType.phone,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildInput(
+                      controller: _passwordController,
+                      hint: 'Mot de passe',
+                      icon: Icons.lock,
+                      isPassword: true,
+                      obscure: _obscurePassword,
+                      onToggle: () => setState(() => _obscurePassword = !_obscurePassword),
+                    ),
+                    const SizedBox(height: 40),
                     SizedBox(
+                      width: double.infinity,
                       height: 50,
                       child: ElevatedButton(
-                        onPressed: () {
-                           Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const HomeShell(),
-                                  
-                              ),
-                            );
-                        },
+                        onPressed: _isLoading ? null : _signIn,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: primaryGreen,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(28),
-                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
                         ),
-                        child: const Text(
-                          'Se connecter',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                        child: _isLoading 
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text('Se connecter', style: TextStyle(color: Colors.white, fontSize: 16)),
                       ),
                     ),
-
-                    const SizedBox(height: 14),
-
+                    const SizedBox(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text(
-                          'Tu n\'as pas un compte ? ',
-                          style: TextStyle(color: Colors.black54),
-                        ),
+                        const Text("Pas de compte ? "),
                         GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const SignUpPage(),
-                              ),
-                            );
-                          },
-                          child: Text(
-                            'créer un compte',
-                            style: TextStyle(
-                              color: primaryGreen,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SignUpPage())),
+                          child: const Text(
+                            "Inscrivez-vous",
+                            style: TextStyle(color: primaryGreen, fontWeight: FontWeight.bold),
                           ),
                         ),
                       ],
@@ -166,65 +142,44 @@ class _LoginPageState extends State<LoginPage> {
                   ],
                 ),
               ),
-
-              const SizedBox(height: 30),
-
-              // ===== IMAGE BAS (NON COUPÉE) =====
-              Image.asset(
-                'assets/images/image 20.png',
-                fit: BoxFit.fitWidth,
-                width: double.infinity,
-              ),
-            ],
-          ),
+            ),
+            Positioned(
+              bottom: 0,
+              child: IgnorePointer(child: Image.asset('assets/images/image 19.png', width: size.width, fit: BoxFit.cover)),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  // ===== INPUT ARRONDI =====
-  Widget _buildRoundedInput({
+  Widget _buildInput({
     required TextEditingController controller,
-    required String hintText,
-    required IconData prefix,
-    required Color borderColor,
+    required String hint,
+    required IconData icon,
     bool isPassword = false,
     bool obscure = false,
-    VoidCallback? onToggleObscure,
+    VoidCallback? onToggle,
+    TextInputType keyboardType = TextInputType.text,
   }) {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: borderColor, width: 2),
+        border: Border.all(color: borderGreen, width: 2),
       ),
       child: Row(
         children: [
+          Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: Icon(icon, color: const Color(0xFF7F9B7F))),
           Expanded(
-            child: TextFormField(
+            child: TextField(
               controller: controller,
               obscureText: isPassword ? obscure : false,
-              keyboardType:
-                  isPassword ? TextInputType.text : TextInputType.phone,
-              decoration: InputDecoration(
-                contentPadding:
-                    const EdgeInsets.symmetric(vertical: 18),
-                hintText: hintText,
-                border: InputBorder.none,
-                prefixIcon:
-                    Icon(prefix, color: const Color(0xFF7F9B7F)),
-              ),
+              keyboardType: keyboardType,
+              decoration: InputDecoration(hintText: hint, border: InputBorder.none, hintStyle: const TextStyle(color: lightGrey)),
             ),
           ),
           if (isPassword)
-            IconButton(
-              icon: Icon(
-                obscure
-                    ? Icons.visibility_off
-                    : Icons.remove_red_eye,
-                color: const Color(0xFF7F9B7F),
-              ),
-              onPressed: onToggleObscure,
-            ),
+            IconButton(onPressed: onToggle, icon: Icon(obscure ? Icons.visibility_off : Icons.visibility, color: const Color(0xFF7F9B7F))),
         ],
       ),
     );

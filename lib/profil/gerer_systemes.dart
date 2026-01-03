@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/system_model.dart';
-import '/home/system_detail_page.dart'; // Adjust path if necessary
+import '/home/system_detail_page.dart';
+// 👇 IMPORT THIS FILE so the button knows where to go
+import '../home/ajoutsystem.dart'; 
 
 class ManageSystemsPage extends StatelessWidget {
-  final List<System> systems;
-
-  const ManageSystemsPage({super.key, required this.systems});
+  const ManageSystemsPage({super.key});
 
   static const Color darkGreen = Color(0xFF2D442E);
   static const Color lightGreenTile = Color(0xFFD7E5D0);
@@ -13,6 +15,8 @@ class ManageSystemsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+
     return Scaffold(
       backgroundColor: bgMain,
       appBar: AppBar(
@@ -28,52 +32,105 @@ class ManageSystemsPage extends StatelessWidget {
         ),
         centerTitle: true,
       ),
-      body: systems.isEmpty
-          ? _buildEmptyState()
-          : ListView.separated(
-              padding: const EdgeInsets.all(20),
-              itemCount: systems.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 15),
-              itemBuilder: (context, index) {
-                return _buildSystemItem(context, systems[index]);
-              },
-            ),
+      
+      // 👇 ADD THE BUTTON HERE (Inside Scaffold)
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: darkGreen,
+        child: const Icon(Icons.add, color: Colors.white),
+        onPressed: () {
+          Navigator.push(
+            context, 
+            MaterialPageRoute(builder: (_) => const AddSystemPage())
+          );
+        },
+      ),
+
+      // Use StreamBuilder to listen to Firestore changes
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('users')
+            .doc(user?.uid)
+            .collection('systems')
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return const Center(child: Text("Une erreur est survenue"));
+          }
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator(color: darkGreen));
+          }
+
+          final docs = snapshot.data!.docs;
+
+          if (docs.isEmpty) {
+            return _buildEmptyState();
+          }
+
+          return ListView.separated(
+            padding: const EdgeInsets.all(20),
+            itemCount: docs.length,
+            separatorBuilder: (context, index) => const SizedBox(height: 15),
+            itemBuilder: (context, index) {
+              final data = docs[index].data() as Map<String, dynamic>;
+              final system = System.fromMap(data, docs[index].id);
+              
+              return _buildSystemItem(context, system, docs[index].reference);
+            },
+          );
+        },
+      ),
     );
   }
 
-  Widget _buildSystemItem(BuildContext context, System system) {
-    return InkWell(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => SystemDetailPage(system: system),
-          ),
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
+  Widget _buildSystemItem(BuildContext context, System system, DocumentReference docRef) {
+    return Dismissible(
+      key: Key(system.id),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
         decoration: BoxDecoration(
-          color: lightGreenTile,
+          color: Colors.redAccent,
           borderRadius: BorderRadius.circular(20),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              system.name,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: darkGreen,
+        child: const Icon(Icons.delete, color: Colors.white),
+      ),
+      onDismissed: (direction) {
+        docRef.delete(); 
+      },
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => SystemDetailPage(system: system),
+            ),
+          );
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
+          decoration: BoxDecoration(
+            color: lightGreenTile,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                system.name,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: darkGreen,
+                ),
               ),
-            ),
-            const CircleAvatar(
-              backgroundColor: Colors.white,
-              radius: 15,
-              child: Icon(Icons.chevron_right, color: darkGreen, size: 20),
-            ),
-          ],
+              const CircleAvatar(
+                backgroundColor: Colors.white,
+                radius: 15,
+                child: Icon(Icons.chevron_right, color: darkGreen, size: 20),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -84,7 +141,7 @@ class ManageSystemsPage extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.solar_power_outlined, size: 80, color: darkGreen.withOpacity(0.2)),
+          Icon(Icons.solar_power_outlined, size: 80, color: darkGreen.withValues(alpha: 0.2)),
           const SizedBox(height: 10),
           const Text("Aucun système trouvé", style: TextStyle(color: Colors.grey)),
         ],

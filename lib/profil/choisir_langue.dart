@@ -43,7 +43,7 @@ class ChoisirLanguePage extends StatelessWidget {
   }
 
   Widget _langButton(String label) {
-    return Container(
+    return SizedBox(
       width: 130,
       height: 55,
       child: ElevatedButton(

@@ -1,16 +1,18 @@
-
-// main.dart
 import 'package:flutter/material.dart';
-import '/details/loginpage.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'details/loginpage.dart';
 import 'splashpage.dart';
 import 'profil/monprofile.dart';
-void
- main() {
+
+void main() async {
+  // Ensure Flutter is initialized before Firebase
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +20,7 @@ class MyApp extends StatelessWidget {
       title: 'Smart Solar PUMP',
       theme: ThemeData(
         primarySwatch: Colors.green,
-        fontFamily: 'Inter', // Vous pouvez utiliser Google Fonts
+        fontFamily: 'Inter',
       ),
       initialRoute: '/',
       routes: {

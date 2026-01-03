@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 class ResetPasswordPage extends StatefulWidget {
   final String phoneNumber;
   
-  const ResetPasswordPage({Key? key, required this.phoneNumber}) : super(key: key);
+  const ResetPasswordPage({super.key, required this.phoneNumber});
 
   @override
   State<ResetPasswordPage> createState() => _ResetPasswordPageState();

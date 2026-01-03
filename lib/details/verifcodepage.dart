@@ -6,7 +6,7 @@ import 'resetpassword.dart';
 class VerificationCodePage extends StatefulWidget {
   final String phoneNumber;
   
-  const VerificationCodePage({Key? key, required this.phoneNumber}) : super(key: key);
+  const VerificationCodePage({super.key, required this.phoneNumber});
 
   @override
   State<VerificationCodePage> createState() => _VerificationCodePageState();
