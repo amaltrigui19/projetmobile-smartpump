@@ -2,30 +2,62 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:io';
 import 'editprofile.dart';
 import 'services.dart';
 import 'gerer_systemes.dart';
 import 'parametre.dart';
 import '../details/loginpage.dart';
+import '../l10n/app_localizations.dart';
+import '../widgets/locale_rebuilder.dart';
 
 // Brand colors
 const Color customGreen = Color(0xFF4A5D3F);
 const Color bgColor = Color(0xFFF7F8F4);
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
+
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  File? _profilePhoto;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfilePhoto();
+  }
+
+  Future<void> _loadProfilePhoto() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final prefs = await SharedPreferences.getInstance();
+      final photoPath = prefs.getString('profile_photo_path_${user.uid}');
+      if (photoPath != null && File(photoPath).existsSync()) {
+        setState(() {
+          _profilePhoto = File(photoPath);
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     // Get the current Firebase user
     final user = FirebaseAuth.instance.currentUser;
+    final l10n = AppLocalizations.of(context)!;
 
-    return Scaffold(
+    return LocaleRebuilder(
+      child: Scaffold(
       backgroundColor: bgColor,
       appBar: AppBar(
-        title: const Text(
-          "Mon Profil",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 20),
+        title: Text(
+          l10n.myProfile,
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 20),
         ),
         backgroundColor: customGreen,
         centerTitle: true,
@@ -70,10 +102,13 @@ class ProfilePage extends StatelessWidget {
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white, width: 3),
                         ),
-                        child: const CircleAvatar(
+                        child: CircleAvatar(
                           radius: 50,
                           backgroundColor: Colors.white,
-                          child: Icon(Icons.person, size: 50, color: customGreen),
+                          backgroundImage: _profilePhoto != null ? FileImage(_profilePhoto!) : null,
+                          child: _profilePhoto == null
+                              ? const Icon(Icons.person, size: 50, color: customGreen)
+                              : null,
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -102,9 +137,18 @@ class ProfilePage extends StatelessWidget {
                       ),
                       const SizedBox(height: 20),
                       ElevatedButton.icon(
-                        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const EditProfilePage())),
+                        onPressed: () async {
+                          final result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const EditProfilePage()),
+                          );
+                          // Reload photo after returning from edit page if profile was updated
+                          if (result == true) {
+                            _loadProfilePhoto();
+                          }
+                        },
                         icon: const Icon(Icons.edit, size: 18),
-                        label: const Text("Modifier le profil"),
+                        label: Text(l10n.editProfile),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
                           foregroundColor: customGreen,
@@ -124,28 +168,28 @@ class ProfilePage extends StatelessWidget {
                   child: Column(
                     children: [
                       ProfileMenuItem(
-                        title: "Services",
+                        title: l10n.services,
                         icon: Icons.design_services,
                         iconBgColor: const Color(0xFF6B8E5D),
                         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ServicesPage())),
                       ),
                       const SizedBox(height: 12),
                       ProfileMenuItem(
-                        title: "Gérer les systèmes",
+                        title: l10n.manageSystems,
                         icon: Icons.build,
                         iconBgColor: const Color(0xFF7A9D6E),
                         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ManageSystemsPage())),
                       ),
                       const SizedBox(height: 12),
                       ProfileMenuItem(
-                        title: "Paramètres",
+                        title: l10n.settings,
                         icon: Icons.settings,
                         iconBgColor: const Color(0xFF89AC7D),
                         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsPage())),
                       ),
                       const SizedBox(height: 30),
                       ProfileMenuItem(
-                        title: "Déconnexion",
+                        title: l10n.logout,
                         icon: Icons.logout,
                         iconBgColor: Colors.red.shade400,
                         isLogout: true,
@@ -168,6 +212,7 @@ class ProfilePage extends StatelessWidget {
             ),
           );
         },
+      ),
       ),
     );
   }

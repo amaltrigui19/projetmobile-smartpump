@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'changer_password.dart';
 import 'choisir_langue.dart';
 import 'help_support.dart';
+import '../l10n/app_localizations.dart';
+import '../widgets/locale_rebuilder.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -12,95 +14,99 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: darkGreen),
-          onPressed: () => Navigator.pop(context),
+    final l10n = AppLocalizations.of(context)!;
+    
+    return LocaleRebuilder(
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios, color: darkGreen),
+            onPressed: () => Navigator.pop(context),
+          ),
         ),
-      ),
-      // We use a Stack to place the illustration at the very bottom
-      body: Stack(
-        children: [
-          // 1. Background Illustration at the bottom
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: FractionallySizedBox(
-              widthFactor: 1.0,
-              heightFactor: 0.4, // Adjust this to show more/less of the image
-              child: Image.asset(
-                'assets/images/image 21.png', // Ensure this matches your pubspec.yaml
-                fit: BoxFit.cover,
+        // We use a Stack to place the illustration at the very bottom
+        body: Stack(
+          children: [
+            // 1. Background Illustration at the bottom
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: FractionallySizedBox(
+                widthFactor: 1.0,
+                heightFactor: 0.4, // Adjust this to show more/less of the image
+                child: Image.asset(
+                  'assets/images/image 21.png', // Ensure this matches your pubspec.yaml
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
-          ),
-          
-          // 2. Main Content
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 30),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const SizedBox(height: 10),
-                const Text(
-                  "Paramétres",
-                  style: TextStyle(
-                    fontSize: 42,
-                    fontWeight: FontWeight.bold,
-                    color: darkGreen,
-                    letterSpacing: 0.5,
+            
+            // 2. Main Content
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 30),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 10),
+                  Text(
+                    l10n.settings,
+                    style: const TextStyle(
+                      fontSize: 42,
+                      fontWeight: FontWeight.bold,
+                      color: darkGreen,
+                      letterSpacing: 0.5,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 50),
-                
-                // --- Menu Item 1: Changer le mot de passe ---
-                _buildSimpleMenuItem(
-                  context,
-                  icon: Icons.lock_outline,
-                  title: "Changer le mot de passe",
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const ChangerPasswordPage()),
-                    );
-                  },
-                ),
-                const Divider(color: dividerColor, thickness: 1.5),
-                
-                // --- Menu Item 2: Choisir langue ---
-                _buildSimpleMenuItem(
-                  context,
-                  icon: Icons.language_outlined,
-                  title: "Choisir langue",
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const ChoisirLanguePage()),
-                    );
-                  },
-                ),
-                const Divider(color: dividerColor, thickness: 1.5),
-                
-                // --- Menu Item 3: Help ---
-                _buildSimpleMenuItem(
-                  context,
-                  icon: Icons.info_outline,
-                  title: "Help",
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const HelpSupportPage()),
-                    );
-                  },
-                ),
-                const Divider(color: dividerColor, thickness: 1.5),
-              ],
+                  const SizedBox(height: 50),
+                  
+                  // --- Menu Item 1: Changer le mot de passe ---
+                  _buildSimpleMenuItem(
+                    context,
+                    icon: Icons.lock_outline,
+                    title: l10n.changePassword,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const ChangerPasswordPage()),
+                      );
+                    },
+                  ),
+                  const Divider(color: dividerColor, thickness: 1.5),
+                  
+                  // --- Menu Item 2: Choisir langue ---
+                  _buildSimpleMenuItem(
+                    context,
+                    icon: Icons.language_outlined,
+                    title: l10n.chooseLanguage,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const ChoisirLanguePage()),
+                      );
+                    },
+                  ),
+                  const Divider(color: dividerColor, thickness: 1.5),
+                  
+                  // --- Menu Item 3: Help ---
+                  _buildSimpleMenuItem(
+                    context,
+                    icon: Icons.info_outline,
+                    title: l10n.help,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const HelpSupportPage()),
+                      );
+                    },
+                  ),
+                  const Divider(color: dividerColor, thickness: 1.5),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

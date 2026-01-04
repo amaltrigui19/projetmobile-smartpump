@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
+import '../l10n/app_localizations.dart';
 
 const Color customGreen = Color(0xFF4A6B3E);
 const Color bgColor = Color(0xFFF7F8F4);
@@ -22,6 +27,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
   bool _showPassword = false;
   bool _showConfirmPassword = false;
   bool _isLoading = false;
+  File? _pickedImage;
+  final ImagePicker _imagePicker = ImagePicker();
 
   @override
   void initState() {
@@ -38,6 +45,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
         setState(() {
           _nameController.text = doc.data()?['name'] ?? '';
           _phoneController.text = doc.data()?['phone'] ?? '';
+        });
+      }
+      
+      // Load saved profile photo path
+      final prefs = await SharedPreferences.getInstance();
+      final photoPath = prefs.getString('profile_photo_path_${user.uid}');
+      if (photoPath != null && File(photoPath).existsSync()) {
+        setState(() {
+          _pickedImage = File(photoPath);
         });
       }
     }
@@ -66,6 +82,24 @@ class _EditProfilePageState extends State<EditProfilePage> {
           'phone': phone,
         });
 
+        // Save profile photo path if a new image was selected
+        if (_pickedImage != null) {
+          final prefs = await SharedPreferences.getInstance();
+          
+          // Copy image to app's documents directory for persistence
+          final appDir = await getApplicationDocumentsDirectory();
+          final profileDir = Directory('${appDir.path}/profile_images');
+          if (!profileDir.existsSync()) {
+            profileDir.createSync(recursive: true);
+          }
+          
+          final savedImagePath = '${profileDir.path}/profile_${user.uid}.jpg';
+          await _pickedImage!.copy(savedImagePath);
+          
+          // Save path to SharedPreferences
+          await prefs.setString('profile_photo_path_${user.uid}', savedImagePath);
+        }
+
         // Optional: Update Password if fields are not empty
         if (password.isNotEmpty) {
           if (password == confirmPassword) {
@@ -79,7 +113,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
         if (mounted) {
           _showSnackBar("Profil mis à jour !");
-          Navigator.pop(context);
+          Navigator.pop(context, true); // Return true to indicate photo was updated
         }
       }
     } catch (e) {
@@ -95,6 +129,78 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 
+  Future<void> _pickImage() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        setState(() {
+          _pickedImage = File(image.path);
+        });
+        _showSnackBar('Photo sélectionnée avec succès');
+      }
+    } catch (e) {
+      _showSnackBar('Erreur lors de la sélection de la photo: ${e.toString()}');
+    }
+  }
+
+  Future<void> _takePhoto() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        setState(() {
+          _pickedImage = File(image.path);
+        });
+        _showSnackBar('Photo prise avec succès');
+      }
+    } catch (e) {
+      _showSnackBar('Erreur lors de la prise de photo: ${e.toString()}');
+    }
+  }
+
+  void _showImageSourceDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Choisir la source'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library, color: customGreen),
+                title: const Text('Galerie'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt, color: customGreen),
+                title: const Text('Caméra'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _takePhoto();
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -106,13 +212,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: bgColor,
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        title: const Text(
-          "Modifier Profil",
-          style: TextStyle(color: customGreen, fontWeight: FontWeight.w600),
+        title: Text(
+          l10n.editProfile,
+          style: const TextStyle(color: customGreen, fontWeight: FontWeight.w600),
         ),
         backgroundColor: Colors.white,
         leading: IconButton(
@@ -140,17 +247,20 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       ),
                     ],
                   ),
-                  child: const CircleAvatar(
+                  child: CircleAvatar(
                     radius: 50,
                     backgroundColor: customGreen,
-                    child: Icon(Icons.person, size: 50, color: Colors.white),
+                    backgroundImage: _pickedImage != null ? FileImage(_pickedImage!) : null,
+                    child: _pickedImage == null
+                        ? const Icon(Icons.person, size: 50, color: Colors.white)
+                        : null,
                   ),
                 ),
                 const SizedBox(height: 10),
                 TextButton.icon(
-                  onPressed: () { /* Future: Image Picker logic */ },
+                  onPressed: _showImageSourceDialog,
                   icon: const Icon(Icons.image, color: customGreen),
-                  label: const Text("Changer la photo", style: TextStyle(color: customGreen)),
+                  label: Text(l10n.changePhoto, style: const TextStyle(color: customGreen)),
                 ),
 
                 const SizedBox(height: 25),
@@ -217,9 +327,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   child: ElevatedButton.icon(
                     onPressed: _handleSave, // Linked to save logic
                     icon: const Icon(Icons.save, color: Colors.white),
-                    label: const Text(
-                      "Enregistrer",
-                      style: TextStyle(color: Colors.white, fontSize: 18),
+                    label: Text(
+                      l10n.save,
+                      style: const TextStyle(color: Colors.white, fontSize: 18),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: customGreen,

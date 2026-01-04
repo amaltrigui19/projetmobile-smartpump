@@ -53,7 +53,7 @@ class _SignUpPageState extends State<SignUpPage> {
     try {
       // 1. Create User in Auth (Using phone + dummy domain as email for Firebase Auth)
       // Alternatively, you could add an Email field to your UI.
-      final userEmail = "$phone@smartsloar.com"; 
+      final userEmail = "$phone@smartsolar.com"; 
       UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: userEmail,
         password: password,

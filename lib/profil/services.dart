@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../l10n/app_localizations.dart';
 
 class ServicesPage extends StatelessWidget {
   const ServicesPage({super.key});
@@ -8,56 +9,112 @@ class ServicesPage extends StatelessWidget {
   static const Color bgColor = Color(0xFFF7F8F4);
 
   // --- Appel téléphonique ---
-  Future<void> _makePhoneCall(String phoneNumber) async {
-    final Uri uri = Uri(
-      scheme: 'tel',
-      path: phoneNumber,
-    );
+  Future<void> _makePhoneCall(BuildContext context, String phoneNumber) async {
+    try {
+      final Uri uri = Uri(
+        scheme: 'tel',
+        path: phoneNumber,
+      );
 
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    } else {
-      throw 'Impossible d’ouvrir l’application téléphone';
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Impossible d\'ouvrir l\'application téléphone'),
+              backgroundColor: customGreen,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
   // --- Envoyer un Email ---
-  Future<void> _sendEmail(String email) async {
-    final Uri uri = Uri(
-      scheme: 'mailto',
-      path: email,
-      queryParameters: {
-        'subject': 'Contact',
-        'body': 'Bonjour,',
-      },
-    );
+  Future<void> _sendEmail(BuildContext context, String email) async {
+    try {
+      final Uri uri = Uri.parse('mailto:$email?subject=Contact&body=Bonjour,');
 
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    } else {
-      throw 'Impossible d’ouvrir l’application email';
+      // Try to launch directly - Gmail and other email apps should handle mailto: URIs
+      try {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } catch (e) {
+        // If that fails, try platform default
+        try {
+          await launchUrl(uri, mode: LaunchMode.platformDefault);
+        } catch (e2) {
+          // If both fail, show error message
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Impossible d\'ouvrir l\'application email. Vérifiez que vous avez une application email installée (Gmail, Outlook, etc.)'),
+                backgroundColor: Colors.orange,
+                duration: Duration(seconds: 4),
+              ),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
   // --- Envoyer un SMS ---
-  Future<void> _sendSMS(String phoneNumber) async {
-    final Uri uri = Uri(
-      scheme: 'sms',
-      path: phoneNumber,
-      queryParameters: {
-        'body': 'Bonjour,',
-      },
-    );
+  Future<void> _sendSMS(BuildContext context, String phoneNumber) async {
+    try {
+      final Uri uri = Uri(
+        scheme: 'sms',
+        path: phoneNumber,
+        queryParameters: {
+          'body': 'Bonjour,',
+        },
+      );
 
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    } else {
-      throw 'Impossible d’ouvrir l’application SMS';
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Impossible d\'ouvrir l\'application SMS'),
+              backgroundColor: customGreen,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: bgColor,
       appBar: AppBar(
@@ -72,28 +129,28 @@ class ServicesPage extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 25),
         child: Column(
           children: [
-            const Text(
-              "Contactez-nous",
-              style: TextStyle(
+            Text(
+              l10n.contactUs,
+              style: const TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
                 color: customGreen,
               ),
             ),
             const SizedBox(height: 15),
-            const Text(
-              "Vous souhaitez prendre contact ? Voici comment vous pouvez nous joindre :",
+            Text(
+              l10n.contactDescription,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16, color: Colors.black54),
+              style: const TextStyle(fontSize: 16, color: Colors.black54),
             ),
             const SizedBox(height: 40),
 
             // --- Appeler ---
             _buildContactCard(
               icon: Icons.phone_outlined,
-              title: "Appeler",
+              title: l10n.call,
               subtitle: "+111 22333444",
-              onTap: () => _makePhoneCall("+11122333444"),
+              onTap: () => _makePhoneCall(context, "+11122333444"),
             ),
 
             const SizedBox(height: 20),
@@ -101,9 +158,9 @@ class ServicesPage extends StatelessWidget {
             // --- Email ---
             _buildContactCard(
               icon: Icons.email_outlined,
-              title: "Email",
+              title: l10n.email,
               subtitle: "example@email.com",
-              onTap: () => _sendEmail("example@email.com"),
+              onTap: () => _sendEmail(context, "example@email.com"),
             ),
 
             const SizedBox(height: 20),
@@ -111,9 +168,9 @@ class ServicesPage extends StatelessWidget {
             // --- SMS ---
             _buildContactCard(
               icon: Icons.chat_bubble_outline,
-              title: "Message",
+              title: l10n.message,
               subtitle: "+111 22333444",
-              onTap: () => _sendSMS("+11122333444"),
+              onTap: () => _sendSMS(context, "+11122333444"),
             ),
           ],
         ),
