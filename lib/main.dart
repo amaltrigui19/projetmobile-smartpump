@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'details/loginpage.dart';
 import 'splashpage.dart';
 import 'profil/monprofile.dart';
+import 'nav.dart';
 import 'l10n/app_localizations.dart';
 
 Future<void> main() async {
@@ -94,6 +95,7 @@ class _MyAppState extends State<MyApp> {
       routes: {
         '/': (context) => const SplashScreen(),
         '/login': (context) => const LoginPage(),
+        '/home': (context) => const HomeShell(),
         '/profile': (context) => const ProfilePage(),
       },
     );

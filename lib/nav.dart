@@ -1,12 +1,6 @@
 import 'package:flutter/material.dart';
 import 'home/home.dart';
 import 'profil/monprofile.dart';
-import '../models/system_model.dart';
-import '../models/alert_model.dart';
-
-// Mock data (temporaire)
-final List<System> mockSystems = [];
-final List<AlertItem> mockAlerts = [];
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
@@ -22,13 +16,7 @@ class _HomeShellState extends State<HomeShell> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: _currentIndex == 0
-          ? HomePage(
-              systems: mockSystems,
-              alerts: mockAlerts,
-              onAddSystem: () {
-                // action ajouter système
-              },
-            )
+          ? const HomePage()
           : const ProfilePage(),
 
       /// ===== BARRE DE NAVIGATION =====
