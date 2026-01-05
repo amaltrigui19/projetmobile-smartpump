@@ -3,10 +3,12 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+// Importations de tes pages
 import 'details/loginpage.dart';
 import 'splashpage.dart';
 import 'profil/monprofile.dart';
 import 'l10n/app_localizations.dart';
+import 'nav.dart'; // <--- Assure-toi d'importer le fichier où se trouve HomeShell
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,7 +27,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  Locale _locale = const Locale('fr', 'FR'); // Default to French
+  Locale _locale = const Locale('fr', 'FR'); 
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
 
   @override
@@ -73,9 +75,9 @@ class _MyAppState extends State<MyApp> {
       debugShowCheckedModeBanner: false,
       locale: _locale,
       supportedLocales: const [
-        Locale('en', 'US'), // English
-        Locale('fr', 'FR'), // French
-        Locale('ar', 'AR'), // Arabic
+        Locale('en', 'US'),
+        Locale('fr', 'FR'),
+        Locale('ar', 'AR'),
       ],
       localizationsDelegates: const [
         AppLocalizations.delegate,
@@ -83,19 +85,21 @@ class _MyAppState extends State<MyApp> {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-
       theme: ThemeData(
         primarySwatch: Colors.green,
         fontFamily: 'Inter',
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-
       initialRoute: '/',
       routes: {
         '/': (context) => const SplashScreen(),
         '/login': (context) => const LoginPage(),
+        
+        // C'EST CETTE LIGNE QUI DOIT ÊTRE PRÉSENTE :
+        '/home': (context) => const HomeShell(), 
+        
         '/profile': (context) => const ProfilePage(),
-      },
+      }
     );
   }
 }
