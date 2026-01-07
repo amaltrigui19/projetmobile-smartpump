@@ -3,16 +3,28 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'firebase_options.dart';
 import 'details/loginpage.dart';
 import 'splashpage.dart';
 import 'profil/monprofile.dart';
-import 'nav.dart';
 import 'l10n/app_localizations.dart';
-import 'nav.dart'; 
+import 'nav.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  
+  // Check if Firebase is already initialized to avoid duplicate app error
+  try {
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    }
+  } catch (e) {
+    // If Firebase is already initialized, continue anyway
+    debugPrint('Firebase initialization: $e');
+  }
+  
   runApp(const MyApp());
 }
 
@@ -27,7 +39,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  Locale _locale = const Locale('fr', 'FR'); 
+  Locale _locale = const Locale('fr', 'FR'); // Default to French
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
 
   @override
@@ -75,9 +87,9 @@ class _MyAppState extends State<MyApp> {
       debugShowCheckedModeBanner: false,
       locale: _locale,
       supportedLocales: const [
-        Locale('en', 'US'),
-        Locale('fr', 'FR'),
-        Locale('ar', 'AR'),
+        Locale('en', 'US'), // English
+        Locale('fr', 'FR'), // French
+        Locale('ar', 'AR'), // Arabic
       ],
       localizationsDelegates: const [
         AppLocalizations.delegate,
@@ -85,20 +97,20 @@ class _MyAppState extends State<MyApp> {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
+
       theme: ThemeData(
         primarySwatch: Colors.green,
         fontFamily: 'Inter',
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
+
       initialRoute: '/',
       routes: {
         '/': (context) => const SplashScreen(),
         '/login': (context) => const LoginPage(),
-        
-        '/home': (context) => const HomeShell(), 
-        
+        '/home': (context) => const HomeShell(),
         '/profile': (context) => const ProfilePage(),
-      }
+      },
     );
   }
 }

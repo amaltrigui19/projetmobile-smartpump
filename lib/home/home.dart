@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'system_detail_page.dart';
 import '../models/system_model.dart';
+import '../models/alert_model.dart';
+import '../services/google_sheets_service.dart';
 import 'ajoutsystem.dart';
 import '/maintenance_page.dart'; 
 
@@ -68,49 +70,88 @@ class HomePage extends StatelessWidget {
                   }
                   
                   avgEfficiency = functioningSystemsCount > 0 ? totalEfficiency / functioningSystemsCount : 0.0;
+                  bool hasFunctioningSystems = functioningSystemsCount > 0;
 
-                  return SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildEfficiencyCard(avgEfficiency),
-                        const SizedBox(height: 30),
-                        const Text("Vos Systèmes", 
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 12),
-                        if (systems.isEmpty)
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(40),
-                            decoration: BoxDecoration(
-                              color: lightGreen.withOpacity(0.3),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const Center(
-                              child: Text(
-                                "Aucun système ajouté",
-                                style: TextStyle(color: Colors.grey, fontSize: 16),
-                              ),
-                            ),
-                          )
-                        else
-                          ...systems.map((system) => Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: _buildSystemRectangle(context, system),
-                              )),
-                        
-                        const SizedBox(height: 30),
-                        // Section des alertes (Toujours affichée)
-                        _buildAlertsSection(context, systems),
-                      ],
-                    ),
+                  // Fetch alerts from Google Sheets (direct connection)
+                  return FutureBuilder<List<AlertItem>>(
+                    future: GoogleSheetsService.fetchAlerts(),
+                    builder: (context, alertsSnapshot) {
+                      List<AlertItem> alerts = [];
+                      if (alertsSnapshot.hasData) {
+                        alerts = alertsSnapshot.data!;
+                      } else if (alertsSnapshot.hasError) {
+                        // Fallback to Firestore if Google Sheets fails
+                        return StreamBuilder<QuerySnapshot>(
+                          stream: FirebaseFirestore.instance
+                              .collection('users')
+                              .doc(user?.uid)
+                              .collection('alerts')
+                              .where('isResolved', isEqualTo: false)
+                              .orderBy('createdAt', descending: true)
+                              .limit(10)
+                              .snapshots(),
+                          builder: (context, firestoreSnapshot) {
+                            List<AlertItem> firestoreAlerts = [];
+                            if (firestoreSnapshot.hasData) {
+                              firestoreAlerts = firestoreSnapshot.data!.docs.map((doc) {
+                                final data = doc.data() as Map<String, dynamic>;
+                                return AlertItem.fromMap(data, doc.id);
+                              }).toList();
+                            }
+                            return _buildContent(context, systems, avgEfficiency, hasFunctioningSystems, firestoreAlerts);
+                          },
+                        );
+                      }
+                      return _buildContent(context, systems, avgEfficiency, hasFunctioningSystems, alerts);
+                    },
                   );
                 },
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildContent(BuildContext context, List<System> systems, double avgEfficiency, bool hasFunctioningSystems, List<AlertItem> alerts) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildEfficiencyCard(avgEfficiency),
+          const SizedBox(height: 30),
+          const Text("Vos Systèmes", 
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+          if (systems.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(40),
+              decoration: BoxDecoration(
+                color: lightGreen.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Center(
+                child: Text(
+                  "Aucun système ajouté",
+                  style: TextStyle(color: Colors.grey, fontSize: 16),
+                ),
+              ),
+            )
+          else
+            ...systems.map((system) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _buildSystemRectangle(context, system),
+                )),
+          
+          // Show alerts section if there are alerts (from Google Sheets)
+          if (alerts.isNotEmpty) ...[
+            const SizedBox(height: 30),
+            _buildAlertsSection(context, alerts, systems),
+          ],
+        ],
       ),
     );
   }
@@ -214,10 +255,33 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  // --- SECTION ALERTES COMPLETE ---
-  Widget _buildAlertsSection(BuildContext context, List<System> systems) {
-    // Logique pour vérifier si une alerte spécifique existe (ex: "Système 2")
-    bool hasCriticalAlert = systems.any((s) => s.name.contains("Système 2"));
+  // --- Alerts Section - fetches from Firestore ---
+  Widget _buildAlertsSection(BuildContext context, List<AlertItem> alerts, List<System> systems) {
+    // Get system name by ID
+    String getSystemName(String systemId) {
+      try {
+        final system = systems.firstWhere((s) => s.id == systemId);
+        return system.name;
+      } catch (e) {
+        return 'Système inconnu';
+      }
+    }
+
+    // Get severity color
+    Color getSeverityColor(String severity) {
+      switch (severity.toLowerCase()) {
+        case 'critical':
+          return Colors.red;
+        case 'high':
+          return Colors.orange;
+        case 'medium':
+          return Colors.amber;
+        case 'low':
+          return Colors.blue;
+        default:
+          return Colors.grey;
+      }
+    }
 
     return Container(
       width: double.infinity,
@@ -225,22 +289,29 @@ class HomePage extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Badge Titre (Toujours présent)
+          // Badge Titre
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: darkGreen,
+              color: alertLabelGreen,
               borderRadius: BorderRadius.circular(10),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: const [
-                Icon(Icons.warning_amber_rounded, color: Color(0xFFF2A7AD), size: 22),
+                Icon(Icons.warning_amber_rounded, color: Colors.white, size: 22),
                 SizedBox(width: 8),
                 Text(
                   'Dernières alertes',
@@ -251,47 +322,56 @@ class HomePage extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           
-          if (hasCriticalAlert) ...[
-            // Liste des alertes si elles existent
-            _buildAlertItem(context, "Réparation urgente du système", "Système 1", () {}),
-            const SizedBox(height: 10),
-            _buildAlertItem(
-              context, 
-              "Vérifier la pompe", 
-              "Système 2", 
-              () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const MaintenancePompePage()),
-                );
-              },
-            ),
-          ] else ...[
-            // Message si aucune alerte
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 20),
-                child: Text(
-                  "Aucune alerte détectée",
-                  style: TextStyle(color: Colors.grey, fontSize: 14, fontStyle: FontStyle.italic),
-                ),
+          // List of alerts from Firestore
+          ...alerts.map((alert) {
+            final systemName = getSystemName(alert.systemId);
+            final severityColor = getSeverityColor(alert.severity);
+            
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _buildAlertItem(
+                context,
+                alert.title,
+                systemName,
+                severityColor,
+                () {
+                  // Navigate to system detail if system exists
+                  try {
+                    final system = systems.firstWhere((s) => s.id == alert.systemId);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => SystemDetailPage(system: system),
+                      ),
+                    );
+                  } catch (e) {
+                    // System not found, show maintenance page instead
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const MaintenancePompePage(),
+                      ),
+                    );
+                  }
+                },
               ),
-            ),
-          ],
+            );
+          }),
         ],
       ),
     );
   }
 
   // Widget helper pour les lignes d'alertes
-  Widget _buildAlertItem(BuildContext context, String title, String subtitle, VoidCallback onTap) {
+  Widget _buildAlertItem(BuildContext context, String title, String subtitle, Color severityColor, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: const Color(0xFFE8F3E0),
+          color: lightGreen.withOpacity(0.4),
           borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: severityColor.withOpacity(0.3), width: 1),
         ),
         child: Row(
           children: [
