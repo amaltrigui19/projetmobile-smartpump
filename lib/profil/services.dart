@@ -145,32 +145,19 @@ class ServicesPage extends StatelessWidget {
             ),
             const SizedBox(height: 40),
 
-            // --- Appeler ---
-            _buildContactCard(
-              icon: Icons.phone_outlined,
-              title: l10n.call,
-              subtitle: "+111 22333444",
-              onTap: () => _makePhoneCall(context, "+11122333444"),
-            ),
-
-            const SizedBox(height: 20),
-
-            // --- Email ---
-            _buildContactCard(
-              icon: Icons.email_outlined,
-              title: l10n.email,
-              subtitle: "example@email.com",
-              onTap: () => _sendEmail(context, "example@email.com"),
-            ),
-
-            const SizedBox(height: 20),
-
-            // --- SMS ---
-            _buildContactCard(
-              icon: Icons.chat_bubble_outline,
-              title: l10n.message,
-              subtitle: "+111 22333444",
-              onTap: () => _sendSMS(context, "+11122333444"),
+            // Contact information cards removed - add your real contact information here
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(40.0),
+                child: Text(
+                  'Contact information not configured',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey.shade600,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
             ),
           ],
         ),
