@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'system_detail_page.dart';
 import '../models/system_model.dart';
 import 'ajoutsystem.dart';
-import '/maintenance_page.dart'; // Assurez-vous que le chemin est correct
+import '/maintenance_page.dart'; 
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -37,7 +37,7 @@ class HomePage extends StatelessWidget {
                 return _buildHeader(context, userName);
               },
             ),
-            // Systems and efficiency
+
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
                 stream: FirebaseFirestore.instance
