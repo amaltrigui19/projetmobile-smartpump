@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../widgets/ai_model_data_widget.dart';
 import '../models/system_model.dart';
-import 'weather.dart';
+import 'weather.dart'; 
 
 class SystemDetailPage extends StatefulWidget {
   final System system;
@@ -17,146 +17,115 @@ class SystemDetailPage extends StatefulWidget {
 class _SystemDetailPageState extends State<SystemDetailPage> {
   final User? user = FirebaseAuth.instance.currentUser;
 
+  // Palette de couleurs harmonisée
+  final Color primaryGreen = const Color(0xFF4B6038); // Vert foncé
+  final Color lightGreenBg = const Color(0xFFA6BD8B); // Vert sauge
+  final Color cardWhite = const Color(0xFFF7FBF4);    // Fond des cartes
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text(widget.system.name),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => setState(() {}),
-          ),
-        ],
+        backgroundColor: primaryGreen,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          "info sur le système",
+          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w400),
+        ),
+        // "En ligne" supprimé ici
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // System info card
-            _buildSystemInfoCard(),
-            
-            const SizedBox(height: 20),
-            
-            // Weather widget
-            WeatherWidget(
-              lat: widget.system.latitude,
-              lon: widget.system.longitude,
-            ),
-            
-            const SizedBox(height: 20),
-            
-            // AI Model Data and Error Alerts Widget
-            AIModelDataWidget(
-              systemId: widget.system.id,
-              systemName: widget.system.name,
-            ),
-            
-            const SizedBox(height: 20),
-            
-            // Additional system metrics
-            _buildSystemMetrics(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSystemInfoCard() {
-    return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade100,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.solar_power, color: Colors.blue),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.system.name,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        'ID: ${widget.system.id}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            
-            const SizedBox(height: 12),
-            
-            // Location
-            if (widget.system.locationName.isNotEmpty)
-              Row(
-                children: [
-                  const Icon(Icons.location_on, size: 16, color: Colors.grey),
-                  const SizedBox(width: 8),
-                  Text(
-                    widget.system.locationName,
-                    style: const TextStyle(fontSize: 14, color: Colors.grey),
-                  ),
-                ],
-              ),
-            
-            const SizedBox(height: 12),
-            
-            // Status badge (based on current power)
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: (double.tryParse(widget.system.currentPower) ?? 0.0) > 0 
-                        ? Colors.green.shade100 
-                        : Colors.orange.shade100, 
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    (double.tryParse(widget.system.currentPower) ?? 0.0) > 0 ? 'ACTIVE' : 'INACTIVE',
-                    style: TextStyle(
-                      color: (double.tryParse(widget.system.currentPower) ?? 0.0) > 0 
-                          ? Colors.green 
-                          : Colors.orange,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
+            // 1. BLOC MÉTÉO (Cliquable)
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => WeatherPage(
+                      lat: widget.system.latitude,
+                      lon: widget.system.longitude,
+                      systemName: widget.system.name,
                     ),
                   ),
-                ),
-              ],
+                );
+              },
+              child: _buildWeatherHeader(),
             ),
+
+            // 2. MÉTRIQUES DU SYSTÈME (Temps réel Firebase)
+            _buildMetricsGrid(),
+            
+            const SizedBox(height: 10),
+
+            // 3. SECTION IA (Couleurs modifiées pour correspondre au design)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Theme(
+                data: Theme.of(context).copyWith(
+                  // On injecte les couleurs dans le thème local du widget
+                  primaryColor: primaryGreen,
+                  cardColor: cardWhite,
+                ),
+                child: AIModelDataWidget(
+                  systemId: widget.system.id,
+                  systemName: widget.system.name,
+                ),
+              ),
+            ),
+            
+            const SizedBox(height: 30),
           ],
         ),
+      ),
+      bottomNavigationBar: _buildBottomNav(),
+    );
+  }
+
+  Widget _buildWeatherHeader() {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: lightGreenBg,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text("Maintenant", style: TextStyle(fontSize: 22, fontWeight: FontWeight.w500)),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  const Text("Nuageux", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text("Ressenti : 31°", style: TextStyle(color: Colors.black.withOpacity(0.6))),
+                ],
+              )
+            ],
+          ),
+          Row(
+            children: [
+              const Text("26°", style: TextStyle(fontSize: 68, fontWeight: FontWeight.bold)),
+              const SizedBox(width: 15),
+              const Icon(Icons.wb_cloudy_outlined, size: 64, color: Colors.white),
+            ],
+          ),
+          const Text("Max: 28°  Min: 24°", style: TextStyle(fontSize: 16)),
+        ],
       ),
     );
   }
 
-  Widget _buildSystemMetrics() {
+  Widget _buildMetricsGrid() {
     return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance
           .collection('users')
@@ -165,125 +134,92 @@ class _SystemDetailPageState extends State<SystemDetailPage> {
           .doc(widget.system.id)
           .snapshots(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData || !snapshot.data!.exists) {
-          return Container();
+        Map<String, dynamic> metrics = {};
+        if (snapshot.hasData && snapshot.data!.exists) {
+          final data = snapshot.data!.data() as Map<String, dynamic>;
+          metrics = data['metrics'] ?? {};
         }
 
-        final data = snapshot.data!.data() as Map<String, dynamic>;
-        final metrics = data['metrics'] ?? {};
-
-        return Card(
-          elevation: 3,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Métriques du Système',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 2.5,
-                  children: [
-                    _buildMetricTile(
-                      icon: Icons.flash_on,
-                      label: 'Puissance Actuelle',
-                      value: metrics['current_power'] ?? '0 W',
-                      color: Colors.amber,
-                    ),
-                    _buildMetricTile(
-                      icon: Icons.energy_savings_leaf,
-                      label: 'Énergie Quotidienne',
-                      value: metrics['daily_energy'] ?? '0 kWh',
-                      color: Colors.green,
-                    ),
-                    _buildMetricTile(
-                      icon: Icons.speed,
-                      label: 'Efficacité',
-                      value: metrics['efficiency'] ?? '0%',
-                      color: Colors.blue,
-                    ),
-                    _buildMetricTile(
-                      icon: Icons.water_drop,
-                      label: 'Débit Total',
-                      value: metrics['total_flow'] ?? '0 L/min',
-                      color: Colors.cyan,
-                    ),
-                  ],
-                ),
-              ],
-            ),
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 2,
+            childAspectRatio: 1.4,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            children: [
+              _buildMetricCard("Puissance actuelle", "${metrics['current_power'] ?? '0'}", "kW", Icons.sync),
+              _buildMetricCard("Énergie du jour", "${metrics['daily_energy'] ?? '0'}", "kWh", Icons.battery_charging_full),
+              _buildMetricCard("Efficacité", "${metrics['efficiency'] ?? '0'}", "%", Icons.speed_outlined),
+              _buildMetricCard("Débit total", "${metrics['total_flow'] ?? '0'}", "m³", Icons.water_drop, iconColor: Colors.lightBlue),
+            ],
           ),
         );
       },
     );
   }
 
-  Widget _buildMetricTile({
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-  }) {
+  Widget _buildMetricCard(String title, String value, String unit, IconData icon, {Color? iconColor}) {
     return Container(
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
       padding: const EdgeInsets.all(12),
-      child: Row(
+      decoration: BoxDecoration(
+        color: cardWhite,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Icon(icon, color: iconColor ?? primaryGreen, size: 30),
+              Expanded(
+                child: Text(
+                  title, 
+                  textAlign: TextAlign.right, 
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Colors.black54)
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: color,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+              const SizedBox(width: 4),
+              Text(unit, style: const TextStyle(fontSize: 14, color: Colors.grey)),
+            ],
+          )
         ],
       ),
     );
   }
 
-  String _formatDate(String dateString) {
-    try {
-      final date = DateTime.parse(dateString);
-      return '${date.day}/${date.month}/${date.year}';
-    } catch (e) {
-      return dateString;
-    }
+  Widget _buildBottomNav() {
+    return Container(
+      height: 70,
+      color: primaryGreen,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _bottomNavItem(Icons.home_outlined, "accueil"),
+          _bottomNavItem(Icons.person_outline, "Mon profil"),
+        ],
+      ),
+    );
+  }
+
+  Widget _bottomNavItem(IconData icon, String label) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, color: Colors.white, size: 28),
+        Text(label, style: const TextStyle(color: Colors.white, fontSize: 12)),
+      ],
+    );
   }
 }
