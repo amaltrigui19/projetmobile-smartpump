@@ -8,6 +8,7 @@ import 'splashpage.dart';
 import 'profil/monprofile.dart';
 import 'nav.dart';
 import 'l10n/app_localizations.dart';
+import 'nav.dart'; 
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,7 +27,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  Locale _locale = const Locale('fr', 'FR'); // Default to French
+  Locale _locale = const Locale('fr', 'FR'); 
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
 
   @override
@@ -74,9 +75,9 @@ class _MyAppState extends State<MyApp> {
       debugShowCheckedModeBanner: false,
       locale: _locale,
       supportedLocales: const [
-        Locale('en', 'US'), // English
-        Locale('fr', 'FR'), // French
-        Locale('ar', 'AR'), // Arabic
+        Locale('en', 'US'),
+        Locale('fr', 'FR'),
+        Locale('ar', 'AR'),
       ],
       localizationsDelegates: const [
         AppLocalizations.delegate,
@@ -84,20 +85,20 @@ class _MyAppState extends State<MyApp> {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-
       theme: ThemeData(
         primarySwatch: Colors.green,
         fontFamily: 'Inter',
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-
       initialRoute: '/',
       routes: {
         '/': (context) => const SplashScreen(),
         '/login': (context) => const LoginPage(),
-        '/home': (context) => const HomeShell(),
+        
+        '/home': (context) => const HomeShell(), 
+        
         '/profile': (context) => const ProfilePage(),
-      },
+      }
     );
   }
 }

@@ -2,8 +2,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class WeatherService {
-  // Open-Meteo doesn't need an API key!
-  Future<Map<String, dynamic>> getWeatherData(double latitude, double longitude) async {
+  
+  Future<Map<String, dynamic>> getWeatherData() async {
+    
     final url = Uri.parse(
         'https://api.open-meteo.com/v1/forecast?latitude=$latitude&longitude=$longitude&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset&timezone=auto');
 
