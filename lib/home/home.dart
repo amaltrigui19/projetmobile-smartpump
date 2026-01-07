@@ -1,20 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'system_detail_page.dart';
 import '../models/system_model.dart';
-import '../models/alert_model.dart';
 import 'ajoutsystem.dart';
 
 class HomePage extends StatelessWidget {
-  final List<System> systems;
-  final List<AlertItem> alerts;
-  final VoidCallback onAddSystem;
-
-  const HomePage({
-    super.key,
-    required this.systems,
-    required this.alerts,
-    required this.onAddSystem,
-  });
+  const HomePage({super.key});
 
   static const Color darkGreen = Color(0xFF4A6B3E);       // Vert principal foncé
   static const Color mediumGreen = Color(0xFF55744A);      // Vert moyen
@@ -25,45 +17,97 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // FIX: Updated the dummy system to match the new Model requirements
-    final displaySystem = systems.isNotEmpty 
-        ? systems[0] 
-        : System(
-            id: "1", 
-            name: "Système 1",
-            modelNumber: "N/A",
-            surface: "0",
-            locationName: "Localisation inconnue",
-            currentPower: "0.0",
-            dailyEnergy: "0.0",
-            efficiency: "95",
-            totalFlow: "0.0",
-            latitude: 36.8065, // Default Tunis
-            longitude: 10.1815,
-          );
+    final user = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
       backgroundColor: bgMain,
       body: SafeArea(
         child: Column(
           children: [
-            _buildHeader(context),
+            // Header with user name
+            StreamBuilder<DocumentSnapshot>(
+              stream: FirebaseFirestore.instance.collection('users').doc(user?.uid).snapshots(),
+              builder: (context, userSnapshot) {
+                String userName = "Utilisateur";
+                if (userSnapshot.hasData && userSnapshot.data!.exists) {
+                  final data = userSnapshot.data!.data() as Map<String, dynamic>;
+                  userName = data['name'] ?? "Utilisateur";
+                }
+                return _buildHeader(context, userName);
+              },
+            ),
+            // Systems and efficiency
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildEfficiencyCard(),
-                    const SizedBox(height: 30),
-                    const Text("Vos Systèmes", 
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 12),
-                    _buildSystemRectangle(context, displaySystem),
-                    const SizedBox(height: 30),
-                    _buildAlertsSection(context),
-                  ],
-                ),
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(user?.uid)
+                    .collection('systems')
+                    .snapshots(),
+                builder: (context, systemsSnapshot) {
+                  List<System> systems = [];
+                  if (systemsSnapshot.hasData) {
+                    systems = systemsSnapshot.data!.docs.map((doc) {
+                      final data = doc.data() as Map<String, dynamic>;
+                      return System.fromMap(data, doc.id);
+                    }).toList();
+                  }
+
+                  // Calculate average efficiency - only from functioning systems (currentPower > 0)
+                  double avgEfficiency = 0.0;
+                  int functioningSystemsCount = 0;
+                  double totalEfficiency = 0.0;
+                  
+                  for (var system in systems) {
+                    final currentPower = double.tryParse(system.currentPower) ?? 0.0;
+                    // Only count systems that are functioning (have power > 0)
+                    if (currentPower > 0) {
+                      final eff = double.tryParse(system.efficiency) ?? 0.0;
+                      totalEfficiency += eff;
+                      functioningSystemsCount++;
+                    }
+                  }
+                  
+                  avgEfficiency = functioningSystemsCount > 0 ? totalEfficiency / functioningSystemsCount : 0.0;
+                  final hasFunctioningSystems = functioningSystemsCount > 0;
+
+                  return SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildEfficiencyCard(avgEfficiency),
+                        const SizedBox(height: 30),
+                        const Text("Vos Systèmes", 
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 12),
+                        if (systems.isEmpty)
+                          Container(
+                            padding: const EdgeInsets.all(40),
+                            decoration: BoxDecoration(
+                              color: lightGreen.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Center(
+                              child: Text(
+                                "Aucun système ajouté",
+                                style: TextStyle(color: Colors.grey, fontSize: 16),
+                              ),
+                            ),
+                          )
+                        else
+                          ...systems.map((system) => Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: _buildSystemRectangle(context, system),
+                              )),
+                        if (hasFunctioningSystems) ...[
+                          const SizedBox(height: 30),
+                          _buildAlertsSection(context, systems),
+                        ],
+                      ],
+                    ),
+                  );
+                },
               ),
             ),
           ],
@@ -72,8 +116,8 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  // --- Header remains the same ---
-  Widget _buildHeader(BuildContext context) {
+  // --- Header with user name ---
+  Widget _buildHeader(BuildContext context, String userName) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
       decoration: const BoxDecoration(
@@ -83,12 +127,12 @@ class HomePage extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Row(
+          Row(
             children: [
-              CircleAvatar(backgroundColor: Colors.white, radius: 18, child: Icon(Icons.person, color: darkGreen)),
-              SizedBox(width: 12),
-              Text("Bonjour Foulen", 
-                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600)),
+              const CircleAvatar(backgroundColor: Colors.white, radius: 18, child: Icon(Icons.person, color: darkGreen)),
+              const SizedBox(width: 12),
+              Text("Bonjour $userName", 
+                style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600)),
             ],
           ),
           IconButton(
@@ -100,8 +144,9 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  // --- Efficiency Card remains the same ---
-  Widget _buildEfficiencyCard() {
+  // --- Efficiency Card with calculated efficiency ---
+  Widget _buildEfficiencyCard(double efficiency) {
+    final efficiencyPercent = efficiency.round();
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(25),
@@ -115,15 +160,19 @@ class HomePage extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("95%", style: TextStyle(color: Colors.white, fontSize: 50, fontWeight: FontWeight.bold)),
-                Text("Efficacité", style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w500)),
-                SizedBox(height: 8),
-                Text("Optimisez votre énergie pour une production efficace",
-                    style: TextStyle(color: Colors.white70, fontSize: 12)),
+                Text("$efficiencyPercent%", style: const TextStyle(color: Colors.white, fontSize: 50, fontWeight: FontWeight.bold)),
+                const Text("Efficacité", style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w500)),
+                const SizedBox(height: 8),
+                Text(
+                  efficiencyPercent > 0 
+                      ? "Optimisez votre énergie pour une production efficace"
+                      : "Aucun système fonctionnel",
+                  style: const TextStyle(color: Colors.white70, fontSize: 12)
+                ),
               ],
             ),
           ),
@@ -165,137 +214,10 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  // --- Alerts Section remains the same ---
-  Widget _buildAlertsSection(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(color: alertLabelGreen, borderRadius: BorderRadius.circular(8)),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.warning_amber_rounded, color: Colors.white, size: 14),
-                SizedBox(width: 6),
-                Text("Dernières alertes", style: TextStyle(color: Colors.white, fontSize: 13)),
-              ],
-            ),
-          ),
-          const SizedBox(height: 15),
-          InkWell(
-            onTap: () => _navigateToAlertDetail(context),
-            borderRadius: BorderRadius.circular(15),
-            child: _buildSingleAlertTile("Réparation urgente du système", "Système 1"),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSingleAlertTile(String title, String subtitle) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: lightGreen.withOpacity(0.4),
-        borderRadius: BorderRadius.circular(15),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: darkGreen)),
-              Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-            ],
-          ),
-          const CircleAvatar(
-            backgroundColor: Colors.white,
-            radius: 14,
-            child: Icon(Icons.chevron_right, size: 18, color: darkGreen),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _navigateToAlertDetail(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => Scaffold(
-          backgroundColor: bgMain,
-          appBar: AppBar(
-            backgroundColor: darkGreen,
-            elevation: 0,
-            leading: IconButton(
-              icon: const Icon(Icons.chevron_left, color: Colors.white, size: 30),
-              onPressed: () => Navigator.pop(context),
-            ),
-            title: const Text("Système 1", style: TextStyle(color: Colors.white)),
-          ),
-          body: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              children: [
-                const SizedBox(height: 20),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.black12),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Text(
-                    "Réparation urgente du système",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Color(0xFFD32F2F), 
-                      fontSize: 16, 
-                      fontWeight: FontWeight.bold
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 30),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE8F0E0),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: darkGreen, 
-                          borderRadius: BorderRadius.circular(6)
-                        ),
-                        child: const Text("URGENT", style: TextStyle(color: Colors.white, fontSize: 10)),
-                      ),
-                      const SizedBox(height: 15),
-                      const Text(
-                        "La pompe solaire ne démarre pas. La batterie est défectueuse ou le panneau est sale.",
-                        style: TextStyle(color: darkGreen, fontSize: 15, height: 1.5),
-                      ),
-                    ],
-                  ),
-                )
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
+  // --- Alerts Section - hidden for now since we don't have real alert data ---
+  Widget _buildAlertsSection(BuildContext context, List<System> systems) {
+    // For now, hide alerts section since we don't have real alert data
+    // When you implement real alerts, you can fetch them from Firestore here
+    return const SizedBox.shrink();
   }
 }

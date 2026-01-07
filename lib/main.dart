@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'details/loginpage.dart';
 import 'splashpage.dart';
 import 'profil/monprofile.dart';
+import 'nav.dart';
 import 'l10n/app_localizations.dart';
 import 'nav.dart'; 
 

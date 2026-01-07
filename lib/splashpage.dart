@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
 
 class SplashScreen extends StatefulWidget {
@@ -43,9 +44,18 @@ class _SplashScreenState extends State<SplashScreen>
       _scaleController.forward();
     });
 
-    // Naviguer vers la page suivante 
-    Timer(const Duration(seconds: 5), () { 
-      Navigator.pushReplacementNamed(context, '/login');
+    // Naviguer vers la page suivante - vérifier si l'utilisateur est déjà connecté
+    Timer(const Duration(seconds: 5), () {
+      final user = FirebaseAuth.instance.currentUser;
+      if (mounted) {
+        if (user != null) {
+          // Utilisateur déjà connecté, aller à la page d'accueil
+          Navigator.pushReplacementNamed(context, '/home');
+        } else {
+          // Utilisateur non connecté, aller à la page de connexion
+          Navigator.pushReplacementNamed(context, '/login');
+        }
+      }
     });
   }
 
