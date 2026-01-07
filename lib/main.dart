@@ -8,7 +8,7 @@ import 'splashpage.dart';
 import 'profil/monprofile.dart';
 import 'nav.dart';
 import 'l10n/app_localizations.dart';
-import 'nav.dart'; 
+ 
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
