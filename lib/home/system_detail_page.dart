@@ -1,262 +1,289 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../widgets/ai_model_data_widget.dart';
 import '../models/system_model.dart';
-import 'weather.dart'; // Assurez-vous que ce fichier contient la classe WeatherPage
+import 'weather.dart';
 
-class SystemDetailPage extends StatelessWidget {
+class SystemDetailPage extends StatefulWidget {
   final System system;
 
   const SystemDetailPage({super.key, required this.system});
 
-  // Palette de Couleurs
-  static const Color bgMain = Color(0xFFF5F5F0);
-  static const Color headerGreen = Color(0xFF4A5D3F);
-  static const Color greenText = Color(0xFF4A5D3F);
-  static const Color cardGreen = Color(0xFFD4E4C8);
-  static const Color paleGreen = Color(0xFFE8F0E0);
+  @override
+  State<SystemDetailPage> createState() => _SystemDetailPageState();
+}
+
+class _SystemDetailPageState extends State<SystemDetailPage> {
+  final User? user = FirebaseAuth.instance.currentUser;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 207, 207, 204),
-      body: SafeArea(
+      appBar: AppBar(
+        title: Text(widget.system.name),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () => setState(() {}),
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            /// ===== HEADER (Entête) =====
-            Container(
-              decoration: const BoxDecoration(
-                color: headerGreen,
-                borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-              child: Row(
-                children: [
-                  InkWell(
-                    onTap: () => Navigator.pop(context),
-                    child: const Icon(Icons.chevron_left, color: Colors.white, size: 30),
+            // System info card
+            _buildSystemInfoCard(),
+            
+            const SizedBox(height: 20),
+            
+            // Weather widget
+            WeatherWidget(
+              lat: widget.system.latitude,
+              lon: widget.system.longitude,
+            ),
+            
+            const SizedBox(height: 20),
+            
+            // AI Model Data and Error Alerts Widget
+            AIModelDataWidget(
+              systemId: widget.system.id,
+              systemName: widget.system.name,
+            ),
+            
+            const SizedBox(height: 20),
+            
+            // Additional system metrics
+            _buildSystemMetrics(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSystemInfoCard() {
+    return Card(
+      elevation: 3,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade100,
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'Détails du système',
-                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w500),
+                  child: const Icon(Icons.solar_power, color: Colors.blue),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.system.name,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        'ID: ${widget.system.id}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            
+            const SizedBox(height: 12),
+            
+            // Location
+            if (widget.system.locationName.isNotEmpty)
+              Row(
+                children: [
+                  const Icon(Icons.location_on, size: 16, color: Colors.grey),
+                  const SizedBox(width: 8),
+                  Text(
+                    widget.system.locationName,
+                    style: const TextStyle(fontSize: 14, color: Colors.grey),
                   ),
                 ],
               ),
-            ),
-
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    /// ===== NOM ET TYPE DU SYSTÈME =====
-                    Text(
-                      system.name,
-                      style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: headerGreen),
+            
+            const SizedBox(height: 12),
+            
+            // Status badge (based on current power)
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: (double.tryParse(widget.system.currentPower) ?? 0.0) > 0 
+                        ? Colors.green.shade100 
+                        : Colors.orange.shade100, 
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    (double.tryParse(widget.system.currentPower) ?? 0.0) > 0 ? 'ACTIVE' : 'INACTIVE',
+                    style: TextStyle(
+                      color: (double.tryParse(widget.system.currentPower) ?? 0.0) > 0 
+                          ? Colors.green 
+                          : Colors.orange,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
                     ),
-                    Text(
-                      "Modèle: ${system.modelNumber} • ${system.locationName}",
-                      style: TextStyle(fontSize: 14, color: const Color.fromARGB(255, 136, 134, 134)),
-                    ),
-                    
-                    const SizedBox(height: 20),
-
-                    /// ===== CARTE MÉTÉO (CLICKABLE) =====
-                    InkWell(
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => WeatherPage(
-                            lat: system.latitude,
-                            lon: system.longitude,
-                            systemName: system.name,
-                          ),
-                        ),
-                      ),
-                      borderRadius: BorderRadius.circular(24),
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: cardGreen,
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: const [
-                                Text('Météo Locale', style: TextStyle(color: greenText, fontSize: 14)),
-                                SizedBox(height: 4),
-                                Text(
-                                  'Consulter les prévisions',
-                                  style: TextStyle(color: greenText, fontSize: 18, fontWeight: FontWeight.bold),
-                                ),
-                              ],
-                            ),
-                            const Icon(Icons.wb_sunny_rounded, color: Colors.orangeAccent, size: 44),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    /// ===== GRILLE DES MESURES (METRICS) =====
-                    GridView.count(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 15,
-                      mainAxisSpacing: 15,
-                      childAspectRatio: 1.1,
-                      children: [
-                        _MetricCard(
-                          title: 'Puissance actuelle',
-                          value: system.currentPower,
-                          unit: 'kW',
-                          background: Colors.white,
-                          icon: Icons.bolt,
-                        ),
-                        _MetricCard(
-                          title: 'Énergie du jour',
-                          value: system.dailyEnergy,
-                          unit: 'kWh',
-                          background: Colors.white,
-                          icon: Icons.today,
-                        ),
-                        _MetricCard(
-                          title: 'Efficacité',
-                          value: system.efficiency,
-                          unit: '%',
-                          background: paleGreen,
-                          icon: Icons.trending_up,
-                        ),
-                        _MetricCard(
-                          title: 'Superficie',
-                          value: system.surface,
-                          unit: 'ha',
-                          background: paleGreen,
-                          icon: Icons.landscape,
-                        ),
-                      ],
-                    ),
-                    
-                    const SizedBox(height: 15),
-                    
-                    // Une carte large pour le débit total
-                    _MetricCardWide(
-                      title: 'Débit Total',
-                      value: system.totalFlow,
-                      unit: 'm³',
-                      icon: Icons.water_drop,
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
           ],
         ),
       ),
     );
   }
-}
 
-class _MetricCard extends StatelessWidget {
-  final String title, value, unit;
-  final Color background;
-  final IconData icon;
+  Widget _buildSystemMetrics() {
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .doc(user?.uid)
+          .collection('systems')
+          .doc(widget.system.id)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData || !snapshot.data!.exists) {
+          return Container();
+        }
 
-  const _MetricCard({
-    required this.title,
-    required this.value,
-    required this.unit,
-    required this.background,
-    required this.icon,
-  });
+        final data = snapshot.data!.data() as Map<String, dynamic>;
+        final metrics = data['metrics'] ?? {};
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 4)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Icon(icon, size: 18, color: const Color(0xFF7A8D6F)),
-            ],
+        return Card(
+          elevation: 3,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
           ),
-          const Spacer(),
-          Text(title, style: const TextStyle(fontSize: 11, color: Color(0xFF7A8D6F), fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1A2A15))),
-              const SizedBox(width: 4),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 2),
-                child: Text(unit, style: const TextStyle(color: Color(0xFF7A8D6F), fontSize: 12)),
-              ),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Métriques du Système',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                
+                GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 2.5,
+                  children: [
+                    _buildMetricTile(
+                      icon: Icons.flash_on,
+                      label: 'Puissance Actuelle',
+                      value: metrics['current_power'] ?? '0 W',
+                      color: Colors.amber,
+                    ),
+                    _buildMetricTile(
+                      icon: Icons.energy_savings_leaf,
+                      label: 'Énergie Quotidienne',
+                      value: metrics['daily_energy'] ?? '0 kWh',
+                      color: Colors.green,
+                    ),
+                    _buildMetricTile(
+                      icon: Icons.speed,
+                      label: 'Efficacité',
+                      value: metrics['efficiency'] ?? '0%',
+                      color: Colors.blue,
+                    ),
+                    _buildMetricTile(
+                      icon: Icons.water_drop,
+                      label: 'Débit Total',
+                      value: metrics['total_flow'] ?? '0 L/min',
+                      color: Colors.cyan,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMetricTile({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
-}
 
-class _MetricCardWide extends StatelessWidget {
-  final String title, value, unit;
-  final IconData icon;
-
-  const _MetricCardWide({required this.title, required this.value, required this.unit, required this.icon});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 4)),
-        ],
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            backgroundColor: const Color(0xFFE8F0E0),
-            child: Icon(icon, color: const Color(0xFF4A5D3F)),
-          ),
-          const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: const TextStyle(fontSize: 12, color: Color(0xFF7A8D6F))),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                  const SizedBox(width: 4),
-                  Text(unit, style: const TextStyle(fontSize: 14, color: Colors.grey)),
-                ],
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
+  String _formatDate(String dateString) {
+    try {
+      final date = DateTime.parse(dateString);
+      return '${date.day}/${date.month}/${date.year}';
+    } catch (e) {
+      return dateString;
+    }
   }
 }

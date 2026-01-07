@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'inscription.dart';
 import '../l10n/app_localizations.dart';
 import '../widgets/locale_rebuilder.dart';
+import '../services/database_sync_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -47,6 +48,12 @@ class _LoginPageState extends State<LoginPage> {
         email: email,
         password: password,
       );
+
+      // Initialize database sync after login
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        await DatabaseSyncService.initializeSync();
+      }
 
       if (mounted) {
         Navigator.pushReplacementNamed(context, '/home');

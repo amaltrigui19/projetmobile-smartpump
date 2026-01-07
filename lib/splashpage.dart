@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
+import '../services/database_sync_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -45,12 +46,18 @@ class _SplashScreenState extends State<SplashScreen>
     });
 
     // Naviguer vers la page suivante - vérifier si l'utilisateur est déjà connecté
-    Timer(const Duration(seconds: 5), () {
+    Timer(const Duration(seconds: 5), () async {
       final user = FirebaseAuth.instance.currentUser;
       if (mounted) {
         if (user != null) {
-          // Utilisateur déjà connecté, aller à la page d'accueil
-          Navigator.pushReplacementNamed(context, '/home');
+          // Utilisateur déjà connecté, initialiser la synchronisation et aller à la page d'accueil
+          // Wrap in try-catch to prevent blocking navigation if RTDB fails
+          try {
+            await DatabaseSyncService.initializeSync();
+          } catch (e) {
+            debugPrint('Sync service initialization error (non-blocking): $e');
+          }
+          if (mounted) Navigator.pushReplacementNamed(context, '/home');
         } else {
           // Utilisateur non connecté, aller à la page de connexion
           Navigator.pushReplacementNamed(context, '/login');

@@ -43,3 +43,12 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Firebase and Google Cloud credentials (NEVER commit these!)
+**/firebase_admin_sdk.json
+**/serviceAccountKey.json
+**/*service*account*.json
+**/*-key.json
+**/*credentials.json
+**/google-services.json
+**/GoogleService-Info.plist
