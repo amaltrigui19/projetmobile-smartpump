@@ -3,12 +3,11 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// Importations de tes pages
 import 'details/loginpage.dart';
 import 'splashpage.dart';
 import 'profil/monprofile.dart';
 import 'l10n/app_localizations.dart';
-import 'nav.dart'; // <--- Assure-toi d'importer le fichier où se trouve HomeShell
+import 'nav.dart'; 
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -95,7 +94,6 @@ class _MyAppState extends State<MyApp> {
         '/': (context) => const SplashScreen(),
         '/login': (context) => const LoginPage(),
         
-        // C'EST CETTE LIGNE QUI DOIT ÊTRE PRÉSENTE :
         '/home': (context) => const HomeShell(), 
         
         '/profile': (context) => const ProfilePage(),
