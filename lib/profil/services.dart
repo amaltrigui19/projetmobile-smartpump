@@ -8,105 +8,26 @@ class ServicesPage extends StatelessWidget {
   static const Color customGreen = Color(0xFF4A5D3F);
   static const Color bgColor = Color(0xFFF7F8F4);
 
-  // --- Appel téléphonique ---
-  Future<void> _makePhoneCall(BuildContext context, String phoneNumber) async {
-    try {
-      final Uri uri = Uri(
-        scheme: 'tel',
-        path: phoneNumber,
-      );
+  // --- Configuration de vos informations ---
+  static const String myPhoneNumber = "+33123456789";
+  static const String myEmail = "contact@votreentreprise.com";
 
+  // --- Fonction générique pour lancer une URL ---
+  Future<void> _launchCustomUrl(BuildContext context, Uri uri, String errorMessage) async {
+    try {
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       } else {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Impossible d\'ouvrir l\'application téléphone'),
-              backgroundColor: customGreen,
-            ),
+            SnackBar(content: Text(errorMessage), backgroundColor: Colors.orange),
           );
         }
       }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  // --- Envoyer un Email ---
-  Future<void> _sendEmail(BuildContext context, String email) async {
-    try {
-      final Uri uri = Uri.parse('mailto:$email?subject=Contact&body=Bonjour,');
-
-      // Try to launch directly - Gmail and other email apps should handle mailto: URIs
-      try {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } catch (e) {
-        // If that fails, try platform default
-        try {
-          await launchUrl(uri, mode: LaunchMode.platformDefault);
-        } catch (e2) {
-          // If both fail, show error message
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Impossible d\'ouvrir l\'application email. Vérifiez que vous avez une application email installée (Gmail, Outlook, etc.)'),
-                backgroundColor: Colors.orange,
-                duration: Duration(seconds: 4),
-              ),
-            );
-          }
-        }
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  // --- Envoyer un SMS ---
-  Future<void> _sendSMS(BuildContext context, String phoneNumber) async {
-    try {
-      final Uri uri = Uri(
-        scheme: 'sms',
-        path: phoneNumber,
-        queryParameters: {
-          'body': 'Bonjour,',
-        },
-      );
-
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Impossible d\'ouvrir l\'application SMS'),
-              backgroundColor: customGreen,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erreur: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Erreur: ${e.toString()}'), backgroundColor: Colors.red),
         );
       }
     }
@@ -114,7 +35,9 @@ class ServicesPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Vérification de la localisation pour éviter les erreurs null
     final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       backgroundColor: bgColor,
       appBar: AppBar(
@@ -145,43 +68,67 @@ class ServicesPage extends StatelessWidget {
             ),
             const SizedBox(height: 40),
 
-            // Contact information cards removed - add your real contact information here
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.all(40.0),
-                child: Text(
-                  'Contact information not configured',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey.shade600,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
+            // --- CARTE TÉLÉPHONE ---
+            _buildContactCard(
+              icon: Icons.phone_forwarded_rounded,
+              title: "Téléphone",
+              subtitle: myPhoneNumber,
+              onTap: () {
+                final uri = Uri(scheme: 'tel', path: myPhoneNumber);
+                _launchCustomUrl(context, uri, "Impossible d'ouvrir le téléphone");
+              },
             ),
+
+            const SizedBox(height: 15),
+
+            // --- CARTE EMAIL ---
+            _buildContactCard(
+              icon: Icons.alternate_email_rounded,
+              title: "Email",
+              subtitle: myEmail,
+              onTap: () {
+                final uri = Uri.parse('mailto:$myEmail?subject=Contact&body=Bonjour,');
+                _launchCustomUrl(context, uri, "Aucune application email installée");
+              },
+            ),
+
+            const SizedBox(height: 15),
+
+            // --- CARTE SMS ---
+            _buildContactCard(
+              icon: Icons.textsms_rounded,
+              title: "SMS",
+              subtitle: "Envoyez-nous un message",
+              onTap: () {
+                final uri = Uri(scheme: 'sms', path: myPhoneNumber);
+                _launchCustomUrl(context, uri, "Impossible d'ouvrir les SMS");
+              },
+            ),
+            
+            const SizedBox(height: 40),
           ],
         ),
       ),
     );
   }
 
-  // --- Contact Card ---
+  // --- Widget de Carte de Contact ---
   Widget _buildContactCard({
     required IconData icon,
     required String title,
     required String subtitle,
-    VoidCallback? onTap,
+    required VoidCallback onTap,
   }) {
     return InkWell(
-      borderRadius: BorderRadius.circular(50),
       onTap: onTap,
+      borderRadius: BorderRadius.circular(25),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 25),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(50),
-          border: Border.all(color: Colors.black12),
+          borderRadius: BorderRadius.circular(25),
+          border: Border.all(color: Colors.black.withOpacity(0.05)),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.03),
@@ -192,28 +139,39 @@ class ServicesPage extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(icon, color: customGreen, size: 30),
-            const SizedBox(width: 25),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: customGreen,
-                  ),
-                ),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.black45,
-                  ),
-                ),
-              ],
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: customGreen.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: customGreen, size: 28),
             ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: customGreen,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.black.withOpacity(0.5),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey.shade400),
           ],
         ),
       ),
